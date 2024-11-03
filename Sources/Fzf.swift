@@ -93,45 +93,52 @@ func moveDown<T>(viewState: ViewState<T>) {
     }
 }
 
+func runSelector<T: CustomStringConvertible>(
+    choices: [T]
+) throws -> [T] {
+    let terminalSize = TerminalSize.current()
+    debug("----------------------------------------", reset: true)
+    debug("Terminal height: \(terminalSize.height)")
+    guard let tty = TTY(fileHandle: STDIN_FILENO) else {
+        // TODO: error
+        return []
+    }
+
+    let lastLine = 20
+    let viewState = ViewState(
+        choices: (0 ... lastLine).map { "line\($0)" },
+        height: terminalSize.height,
+        maxWidth: terminalSize.width - 3
+    )
+
+    debug("Visible lines: \(viewState.visibleLines)")
+    try fillScreen(viewState: viewState)
+    while true {
+        let key = try tty.withRawMode { () -> TerminalKey? in
+            var buffer = [UInt8](repeating: 0, count: 3)
+            let bytesRead = read(STDIN_FILENO, &buffer, 3)
+            if bytesRead == 3 && buffer[0] == 0x1B && buffer[1] == 0x5B {
+                switch buffer[2] {
+                case 0x41: return .up
+                case 0x42: return .down
+                default: return nil
+                }
+            }
+            return nil
+        }
+        guard let key else { break }
+        switch key {
+        case .down: moveDown(viewState: viewState)
+        case .up: moveUp(viewState: viewState)
+        }
+    }
+    return []
+}
+
 @main
 struct Fzf {
     static func main() throws -> Void {
-        let terminalSize = TerminalSize.current()
-        debug("----------------------------------------", reset: true)
-        debug("Terminal height: \(terminalSize.height)")
-        guard let tty = TTY(fileHandle: STDIN_FILENO) else {
-            // TODO: error
-            return
-        }
-
-        let lastLine = 20
-        let viewState = ViewState(
-            choices: (0 ... lastLine).map { "line\($0)" },
-            height: terminalSize.height,
-            maxWidth: terminalSize.width - 3
-        )
-
-        debug("Visible lines: \(viewState.visibleLines)")
-        try fillScreen(viewState: viewState)
-        while true {
-            let key = try tty.withRawMode { () -> TerminalKey? in
-                var buffer = [UInt8](repeating: 0, count: 3)
-                let bytesRead = read(STDIN_FILENO, &buffer, 3)
-                if bytesRead == 3 && buffer[0] == 0x1B && buffer[1] == 0x5B {
-                    switch buffer[2] {
-                    case 0x41: return .up
-                    case 0x42: return .down
-                    default: return nil
-                    }
-                }
-                return nil
-            }
-            guard let key else { break }
-            switch key {
-            case .down: moveDown(viewState: viewState)
-            case .up: moveUp(viewState: viewState)
-            }
-        }
+        _ = try runSelector(choices: (0 ... 20).map { "line\($0)" })
     }
 }
 
