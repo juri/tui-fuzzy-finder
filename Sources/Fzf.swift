@@ -107,8 +107,7 @@ struct Fzf {
         let viewState = ViewState(
             choices: (0 ... lastLine).map { "line\($0)" },
             height: terminalSize.height,
-            maxWidth: terminalSize.width - 3,
-            visibleLines: max(lastLine - terminalSize.height + 2, 0) ... (lastLine)
+            maxWidth: terminalSize.width - 3
         )
 
         debug("Visible lines: \(viewState.visibleLines)")

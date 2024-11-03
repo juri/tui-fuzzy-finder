@@ -15,13 +15,12 @@ final class ViewState<T: CustomStringConvertible> {
     init(
         choices: [T],
         height: Int,
-        maxWidth: Int,
-        visibleLines: ClosedRange<Int>
+        maxWidth: Int
     ) {
         self.choices = choices
         self.current = choices.isEmpty ? nil : choices.count - 1
         self.height = height
-        self.visibleLines = visibleLines
+        self.visibleLines = max(choices.count - height + 1, 0) ... (choices.count - 1)
     }
 
     func moveUp() {
