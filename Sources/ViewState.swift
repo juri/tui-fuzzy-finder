@@ -20,7 +20,7 @@ final class ViewState<T: CustomStringConvertible> {
         self.choices = choices
         self.current = choices.isEmpty ? nil : choices.count - 1
         self.height = height
-        self.visibleLines = max(choices.count - height + 1, 0) ... (choices.count - 1)
+        self.visibleLines = max(choices.count - height + 2, 0) ... (choices.count - 1)
     }
 
     func moveUp() {
@@ -57,7 +57,7 @@ final class ViewState<T: CustomStringConvertible> {
         guard self.visibleLines.contains(index) else {
             return nil
         }
-        return max(0, (self.height - self.visibleLines.count)) + index - self.visibleLines.lowerBound - 1
+        return max(0, (self.height - self.visibleLines.count)) + index - self.visibleLines.lowerBound - 2
     }
 }
 

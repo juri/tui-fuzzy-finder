@@ -9,15 +9,16 @@ func outputCode(_ code: ANSIControlCode) {
 
 func fillScreen<T>(viewState: ViewState<T>) throws {
     outputCode(.clearScreen)
-    let choices = viewState.choices.suffix(viewState.height - 1)
-    let startLine = viewState.height - choices.count
-    var lineNumber = 0
-    for (index, choice) in zip(choices.indices, choices) {
-        outputCode(.moveCursor(x: 0, y: startLine + index))
+    let choices = viewState.choices.suffix(viewState.visibleLines.count)
+    guard let startLine = viewState.line(forChoiceIndex: viewState.visibleLines.lowerBound) else {
+        fatalError()
+    }
+    for (lineNumber, (index, choice)) in zip(0..., zip(choices.indices, choices)) {
+        outputCode(.moveCursor(x: 0, y: startLine + lineNumber))
         print(index == viewState.current ? "> " : "  ", terminator: "")
         print(choice, lineNumber)
-        lineNumber += 1
     }
+    outputCode(.moveBottom(viewState: viewState))
 }
 
 func moveUp<T>(viewState: ViewState<T>) {
@@ -40,6 +41,8 @@ func moveUp<T>(viewState: ViewState<T>) {
         viewState.moveUp()
         outputCode(.moveCursor(x: 0, y: viewState.height))
     } else {
+        outputCode(.moveToLastLine(viewState: viewState))
+        outputCode(.clearLine)
         outputCode(.moveCursor(x: 0, y: 0))
         outputCode(.insertLines(1))
         viewState.moveUp()
@@ -74,9 +77,7 @@ func moveDown<T>(viewState: ViewState<T>) {
     } else {
         outputCode(.moveCursor(x: 0, y: 0))
         outputCode(.clearLine)
-        outputCode(.moveBottom(viewState: viewState))
-        outputCode(.moveCursorUp(n: 1))
-        outputCode(.scrollUp(1))
+        outputCode(.moveToLastLine(viewState: viewState))
 
         viewState.moveDown()
         viewState.scrollDown()
