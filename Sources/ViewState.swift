@@ -5,12 +5,13 @@
 //  Created by Juri Pakaste on 3.11.2024.
 //
 
+@MainActor
 final class ViewState<T: CustomStringConvertible> {
-    let choices: [T]
     let height: Int
 
+    private(set) var choices: [T]
     var current: Int?
-    var visibleLines: ClosedRange<Int>
+    private(set) var visibleLines: ClosedRange<Int>
 
     init(
         choices: [T],
@@ -20,7 +21,15 @@ final class ViewState<T: CustomStringConvertible> {
         self.choices = choices
         self.current = choices.isEmpty ? nil : choices.count - 1
         self.height = height
-        self.visibleLines = max(choices.count - height + 2, 0) ... (choices.count - 1)
+        self.visibleLines = max(choices.count - height + 2, 0) ... max(choices.count - 1, 0)
+    }
+
+    func addChoice(_ choice: T) {
+        self.choices.append(choice)
+        self.visibleLines = max(choices.count - height + 2, 0) ... max(choices.count - 1, 0)
+        if self.current == nil {
+            self.current = 0
+        }
     }
 
     func moveUp() {

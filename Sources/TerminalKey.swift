@@ -8,6 +8,6 @@
 
 enum TerminalKey {
     case down
+    case terminate
     case up
 }
-
