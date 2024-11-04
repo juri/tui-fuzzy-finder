@@ -9,7 +9,6 @@ enum ANSIControlCode {
     case clearLine
     case clearScreen
     case insertLines(Int)
-    case key(TerminalKey)
     case moveCursor(x: Int, y: Int)
     case moveCursorUp(n: Int)
     case restoreCursorPosition
@@ -22,8 +21,6 @@ enum ANSIControlCode {
         switch self {
         case .clearLine: return .init(rawValue: "2K")
         case .clearScreen: return .init(rawValue: "2J")
-        case .key(.down): return .init(rawValue: "B")
-        case .key(.up): return .init(rawValue: "A")
         case let .insertLines(n): return .init(rawValue: "\(n)L")
         case let .moveCursor(x: x, y: y): return .init(rawValue: "\(y + 1);\(x + 1)H")
         case let .moveCursorUp(n: n): return .init(rawValue: "\(n)A")
