@@ -153,6 +153,7 @@ final class KeyReader {
 enum Event<T: CustomStringConvertible & Sendable> {
     case key(TerminalKey?)
     case choice(T)
+    case viewStateChanged
 }
 
 @MainActor
@@ -184,11 +185,13 @@ func runSelector<T: CustomStringConvertible & Sendable, E: Error>(
             case let .failure(error): throw error
             }
         }
+    let viewStateUpdateEvents = viewState.changed
+        .map { Event<T>.viewStateChanged }
 
     let choiceEvents = choices
         .map { choice -> Event<T> in .choice(choice) }
 
-    eventLoop: for try await event in merge(keyEvents, choiceEvents) {
+    eventLoop: for try await event in merge(keyEvents, choiceEvents, viewStateUpdateEvents) {
         debug("got event: \(event)")
         switch event {
         case .key(.down): moveDown(viewState: viewState)
@@ -197,7 +200,8 @@ func runSelector<T: CustomStringConvertible & Sendable, E: Error>(
         case .key(nil): break
         case let .choice(choice):
             viewState.addChoice(choice)
-            debug("viewState visible: \(viewState.visibleLines)")
+            try fillScreen(viewState: viewState)
+        case .viewStateChanged:
             try fillScreen(viewState: viewState)
         }
     }
