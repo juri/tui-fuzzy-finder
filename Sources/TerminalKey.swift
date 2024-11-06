@@ -6,6 +6,7 @@
 //
 
 enum TerminalKey {
+    case character(Character)
     case down
     case terminate
     case up

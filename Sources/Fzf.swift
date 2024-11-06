@@ -23,6 +23,7 @@ func fillScreen<T>(viewState: ViewState<T>) throws {
         print(choice, lineNumber)
     }
     outputCode(.moveBottom(viewState: viewState))
+    showFilter(viewState: viewState)
 }
 
 @MainActor
@@ -100,6 +101,16 @@ func moveDown<T>(viewState: ViewState<T>) {
 }
 
 @MainActor
+func showFilter<T>(viewState: ViewState<T>) {
+    outputCode(.saveCursorPosition)
+    defer { outputCode(.restoreCursorPosition) }
+
+    outputCode(.moveBottom(viewState: viewState))
+    try! FileHandle.standardOutput.write(contentsOf: Data(viewState.filter.utf8))
+    fflush(fdopen(STDOUT_FILENO, "w+"))
+}
+
+@MainActor
 final class KeyReader {
     private let queue: DispatchQueue
     private let stopped: Mutex<Bool> = .init(false)
@@ -118,8 +129,12 @@ final class KeyReader {
                         var buffer = [UInt8](repeating: 0, count: 3)
                         let bytesRead = read(STDIN_FILENO, &buffer, 3)
                         debug("bytesRead: \(bytesRead), buffer: \(buffer)")
-                        if bytesRead == 1 && buffer[0] == 0x03 {
-                            return .terminate
+                        if bytesRead == 1 {
+                            if buffer[0] == 0x03 {
+                                return .terminate
+                            }
+                            let char = Character(.init(buffer[0]))
+                            return .character(char)
                         }
                         if bytesRead == 3 && buffer[0] == 0x1B && buffer[1] == 0x5B {
                             switch buffer[2] {
@@ -193,6 +208,9 @@ func runSelector<T: CustomStringConvertible & Sendable, E: Error>(
     eventLoop: for try await event in merge(keyEvents, choiceEvents, viewStateUpdateEvents) {
         debug("got event: \(event)")
         switch event {
+        case let .key(.character(character)):
+            viewState.addToFilter(character)
+            showFilter(viewState: viewState)
         case .key(.down): moveDown(viewState: viewState)
         case .key(.up): moveUp(viewState: viewState)
         case .key(.terminate): break eventLoop
