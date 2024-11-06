@@ -188,8 +188,7 @@ func runSelector<T: CustomStringConvertible & Sendable, E: Error>(
     let viewStateUpdateEvents = viewState.changed
         .map { Event<T>.viewStateChanged }
 
-    let choiceEvents = choices
-        .map { choice -> Event<T> in .choice(choice) }
+    let choiceEvents = choices.map { choice -> Event<T> in .choice(choice) }
 
     eventLoop: for try await event in merge(keyEvents, choiceEvents, viewStateUpdateEvents) {
         debug("got event: \(event)")
@@ -212,7 +211,7 @@ func runSelector<T: CustomStringConvertible & Sendable, E: Error>(
 @main
 @MainActor
 struct Fzf {
-    static func main() async throws -> Void {
+    static func main() async throws {
         let choices = AsyncStream(unfolding: {
             try! await Task.sleep(for: .seconds(1.5))
             return "line \(Date())"

@@ -27,16 +27,18 @@ final class ViewState<T: CustomStringConvertible & Sendable> {
         self.choiceFilter = ChoiceFilter()
         self.current = choices.isEmpty ? nil : choices.count - 1
         self.height = height
-        self.visibleLines = max(choices.count - height + 2, 0) ... max(choices.count - 1, 0)
+        self.visibleLines = max(choices.count - height + 2, 0)...max(choices.count - 1, 0)
 
-        let (outputStream, outputContinuation) = AsyncStream<Void>.makeStream(bufferingPolicy: .bufferingNewest(1))
+        let (outputStream, outputContinuation) = AsyncStream<Void>.makeStream(
+            bufferingPolicy: .bufferingNewest(1))
         self.outputStream = outputStream
 
         Task {
             for await filteredChoices in self.choiceFilter.output {
                 self.choices = filteredChoices
 
-                self.visibleLines = max(filteredChoices.count - height + 2, 0) ... max(filteredChoices.count - 1, 0)
+                self.visibleLines =
+                    max(filteredChoices.count - height + 2, 0)...max(filteredChoices.count - 1, 0)
                 if filteredChoices.count == 0 {
                     self.current = nil
                 } else if self.current == nil {
@@ -73,7 +75,7 @@ final class ViewState<T: CustomStringConvertible & Sendable> {
     func scrollUp() {
         let visibleLines = self.visibleLines
         guard visibleLines.lowerBound > 0 else { return }
-        self.visibleLines = (visibleLines.lowerBound - 1) ... (visibleLines.upperBound - 1)
+        self.visibleLines = (visibleLines.lowerBound - 1)...(visibleLines.upperBound - 1)
     }
 
     var canScrollUp: Bool {
@@ -88,7 +90,7 @@ final class ViewState<T: CustomStringConvertible & Sendable> {
     func scrollDown() {
         let visibleLines = self.visibleLines
         guard visibleLines.upperBound < self.choices.count - 1 else { return }
-        self.visibleLines = (visibleLines.lowerBound + 1) ... (visibleLines.upperBound + 1)
+        self.visibleLines = (visibleLines.lowerBound + 1)...(visibleLines.upperBound + 1)
     }
 
     var canScrollDown: Bool {
@@ -99,7 +101,8 @@ final class ViewState<T: CustomStringConvertible & Sendable> {
         guard self.visibleLines.contains(index) else {
             return nil
         }
-        return max(0, (self.height - self.visibleLines.count)) + index - self.visibleLines.lowerBound - 2
+        return max(0, (self.height - self.visibleLines.count)) + index
+            - self.visibleLines.lowerBound - 2
     }
 }
 
@@ -118,8 +121,10 @@ private actor ChoiceFilter<T: CustomStringConvertible & Sendable> {
     private let outputStream: OutputStream
 
     init() {
-        let (inputStream, inputContinuation) = InputStream.makeStream(bufferingPolicy: .bufferingNewest(1))
-        let (outputStream, outputContinuation) = OutputStream.makeStream(bufferingPolicy: .bufferingNewest(1))
+        let (inputStream, inputContinuation) = InputStream.makeStream(
+            bufferingPolicy: .bufferingNewest(1))
+        let (outputStream, outputContinuation) = OutputStream.makeStream(
+            bufferingPolicy: .bufferingNewest(1))
 
         self.inputContinuation = inputContinuation
         self.outputContinuation = outputContinuation
@@ -145,7 +150,7 @@ private actor ChoiceFilter<T: CustomStringConvertible & Sendable> {
     }
 }
 
-private extension ChoiceFilter {
+extension ChoiceFilter {
     private func run(_ job: Job) async -> [T] {
         try! await Task.sleep(for: .seconds(2))
         guard !job.filter.isEmpty else { return job.choices }
