@@ -38,7 +38,7 @@ struct TTY {
             $0.withMemoryRebound(to: cc_t.self, capacity: Int(NCCS)) { $0[Int(VMIN)] = 1 }
         }
 
-        if tcsetattr(fileHandle, Int32(TCSAFLUSH), &raw) < 0 {
+        if tcsetattr(fileHandle, TCSAFLUSH, &raw) < 0 {
             throw Failure.setAttributes
         }
 
