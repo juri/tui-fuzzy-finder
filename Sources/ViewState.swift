@@ -154,7 +154,6 @@ private actor ChoiceFilter<T: CustomStringConvertible & Sendable> {
 
 extension ChoiceFilter {
     private func run(_ job: Job) async -> [T] {
-        try! await Task.sleep(for: .seconds(2))
         guard !job.filter.isEmpty else { return job.choices }
         let filtered = job.choices.filter { $0.description.contains(job.filter) }
         return filtered
