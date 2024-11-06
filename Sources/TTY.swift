@@ -23,6 +23,7 @@ struct TTY {
         }
 
         defer {
+            // TODO: This doesn't seem to do the trick? ctrl-z doesn't work after this
             _ = tcsetattr(self.fileHandle, TCSAFLUSH, &originalTermios)
         }
 
