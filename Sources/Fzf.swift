@@ -3,11 +3,23 @@ import Foundation
 import Synchronization
 
 @MainActor
-func outputCode(_ code: ANSIControlCode) {
-    try! FileHandle.standardOutput.write(contentsOf: Data(code.ansiCommand.message.utf8))
+func write(_ strings: [String]) {
+    for string in strings {
+        try! FileHandle.standardOutput.write(contentsOf: Data(string.utf8))
+    }
     // fdopen() on stdout is fast; also the returned file MUST NOT be fclose()d
     // This avoids concurrency complaints due to accessing global `stdout`.
     fflush(fdopen(STDOUT_FILENO, "w+"))
+}
+
+@MainActor
+func write(_ string: String) {
+    write([string])
+}
+
+@MainActor
+func outputCode(_ code: ANSIControlCode) {
+    write(code.ansiCommand.message)
 }
 
 @MainActor
@@ -106,8 +118,7 @@ func showFilter<T>(viewState: ViewState<T>) {
     defer { outputCode(.restoreCursorPosition) }
 
     outputCode(.moveBottom(viewState: viewState))
-    try! FileHandle.standardOutput.write(contentsOf: Data(viewState.filter.utf8))
-    fflush(fdopen(STDOUT_FILENO, "w+"))
+    write(viewState.filter)
 }
 
 @MainActor
