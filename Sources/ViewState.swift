@@ -37,8 +37,12 @@ final class ViewState<T: CustomStringConvertible & Sendable & Equatable> {
 
         Task {
             for await filteredChoices in self.choiceFilter.output {
-                self.visibleLines =
+                let visibleLines =
                     max(filteredChoices.count - height + 2, 0)...max(filteredChoices.count - 1, 0)
+                let visibleLinesChanged = visibleLines != self.visibleLines
+                self.visibleLines = visibleLines
+
+                let oldCurrent = self.current
                 if filteredChoices.count == 0 {
                     self.current = nil
                 } else if var current = self.current {
@@ -47,8 +51,12 @@ final class ViewState<T: CustomStringConvertible & Sendable & Equatable> {
                 } else if self.current == nil {
                     self.current = 0
                 }
+                let currentChanged = self.current != oldCurrent
+
+                let choicesChanged = self.choices != filteredChoices
                 self.choices = filteredChoices
 
+                guard choicesChanged || currentChanged || visibleLinesChanged else { continue }
                 outputContinuation.yield()
             }
         }
