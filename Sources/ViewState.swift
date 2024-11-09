@@ -140,10 +140,10 @@ final class ViewState<T: CustomStringConvertible & Sendable & Equatable> {
 
 extension ViewState {
     enum EditAction {
+        case backspace
+        case insert(Character)
         case left
         case right
-        case insert(Character)
-        case backspace
     }
 }
 
