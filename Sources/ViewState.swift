@@ -17,6 +17,7 @@ final class ViewState<T: CustomStringConvertible & Sendable & Equatable> {
     private(set) var choices: [T]
     private(set) var unfilteredChoices: [T]
     private(set) var visibleLines: ClosedRange<Int>
+    private(set) var editPosition: Int = 0
     private var _filter: String = ""
 
     init(
@@ -67,7 +68,26 @@ final class ViewState<T: CustomStringConvertible & Sendable & Equatable> {
         self.choiceFilter.addJob(.init(choices: self.unfilteredChoices, filter: self.filter))
     }
 
-    var filter: String {
+    func editFilter(_ action: EditAction) {
+        switch action {
+        case .left:
+            self.editPosition = max(self.editPosition - 1, 0)
+        case .right:
+            self.editPosition = min(self.editPosition + 1, self._filter.count)
+        case let .insert(character):
+            var filter = self._filter
+            filter.insert(character, at: filter.index(filter.startIndex, offsetBy: self.editPosition))
+            self.filter = filter
+            self.editPosition += 1
+        case .backspace:
+            var filter = self._filter
+            filter.remove(at: filter.index(filter.startIndex, offsetBy: self.editPosition - 1))
+            self.filter = filter
+            self.editPosition -= 1
+        }
+    }
+
+    private(set) var filter: String {
         get { self._filter }
         set {
             self._filter = newValue
@@ -115,6 +135,15 @@ final class ViewState<T: CustomStringConvertible & Sendable & Equatable> {
         }
         return max(0, (self.height - self.visibleLines.count)) + index
             - self.visibleLines.lowerBound - 2
+    }
+}
+
+extension ViewState {
+    enum EditAction {
+        case left
+        case right
+        case insert(Character)
+        case backspace
     }
 }
 

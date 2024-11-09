@@ -167,8 +167,9 @@ func showFilter<T>(viewState: ViewState<T>) {
     outputCodes([
         .moveBottom(viewState: viewState),
         .clearLine,
+        .literal(viewState.filter),
+        .moveCursorToColumn(n: viewState.editPosition + 1),
     ])
-    write(viewState.filter)
 }
 
 @MainActor
@@ -197,10 +198,12 @@ final class KeyReader {
                             default: return .character(Character(.init(buffer[0])))
                             }
                         }
-                        if bytesRead == 3 && buffer[0] == 0x1B && buffer[1] == 0x5B {
-                            switch buffer[2] {
-                            case 0x41: return .up
-                            case 0x42: return .down
+                        if bytesRead == 3 {
+                            switch (buffer[0], buffer[1], buffer[2]) {
+                            case (0x1B, 0x5B, 0x41): return .up
+                            case (0x1B, 0x5B, 0x42): return .down
+                            case (0x1B, 0x5B, 0x43): return .right
+                            case (0x1B, 0x5B, 0x44): return .left
                             default: return nil
                             }
                         }
@@ -270,10 +273,10 @@ func runSelector<T: CustomStringConvertible & Sendable & Equatable, E: Error>(
         debug("got event: \(event)")
         switch event {
         case .key(.backspace):
-            viewState.filter = String(viewState.filter.dropLast())
+            viewState.editFilter(.backspace)
             showFilter(viewState: viewState)
         case let .key(.character(character)):
-            viewState.filter = viewState.filter + String(character)
+            viewState.editFilter(.insert(character))
             showFilter(viewState: viewState)
         case .key(.down):
             withSavedCursorPosition {
@@ -294,6 +297,12 @@ func runSelector<T: CustomStringConvertible & Sendable & Equatable, E: Error>(
             withSavedCursorPosition {
                 redrawChoices(viewState: viewState)
             }
+        case .key(.some(.left)):
+            viewState.editFilter(.left)
+            showFilter(viewState: viewState)
+        case .key(.some(.right)):
+            viewState.editFilter(.right)
+            showFilter(viewState: viewState)
         }
     }
 
