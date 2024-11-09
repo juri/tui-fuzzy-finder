@@ -7,9 +7,7 @@ func write(_ strings: [String]) {
     for string in strings {
         try! FileHandle.standardOutput.write(contentsOf: Data(string.utf8))
     }
-    // fdopen() on stdout is fast; also the returned file MUST NOT be fclose()d
-    // This avoids concurrency complaints due to accessing global `stdout`.
-    fflush(fdopen(STDOUT_FILENO, "w+"))
+    try! FileHandle.standardOutput.synchronize()
 }
 
 @MainActor
