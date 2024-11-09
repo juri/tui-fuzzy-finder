@@ -75,10 +75,6 @@ final class ViewState<T: CustomStringConvertible & Sendable & Equatable> {
         }
     }
 
-    func addToFilter(_ character: Character) {
-        self.filter = self.filter + String(character)
-    }
-
     var changed: some AsyncSequence<Void, Never> & Sendable {
         self.outputStream
     }

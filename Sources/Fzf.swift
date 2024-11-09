@@ -273,7 +273,7 @@ func runSelector<T: CustomStringConvertible & Sendable & Equatable, E: Error>(
             viewState.filter = String(viewState.filter.dropLast())
             showFilter(viewState: viewState)
         case let .key(.character(character)):
-            viewState.addToFilter(character)
+            viewState.filter = viewState.filter + String(character)
             showFilter(viewState: viewState)
         case .key(.down):
             withSavedCursorPosition {
