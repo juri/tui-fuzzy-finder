@@ -72,9 +72,11 @@ final class ViewState<T: CustomStringConvertible & Sendable & Equatable> {
         switch action {
         case .backspace:
             var filter = self._filter
-            filter.remove(at: filter.index(filter.startIndex, offsetBy: self.editPosition - 1))
-            self.filter = filter
-            self.editPosition -= 1
+            if self.editPosition > 0 {
+                filter.remove(at: filter.index(filter.startIndex, offsetBy: self.editPosition - 1))
+                self.filter = filter
+                self.editPosition -= 1
+            }
         case let .insert(character):
             var filter = self._filter
             filter.insert(character, at: filter.index(filter.startIndex, offsetBy: self.editPosition))
