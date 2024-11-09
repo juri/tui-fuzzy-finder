@@ -9,6 +9,7 @@ enum TerminalKey {
     case backspace
     case character(Character)
     case delete
+    case deleteToEnd
     case deleteToStart
     case down
     case left

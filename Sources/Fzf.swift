@@ -195,6 +195,7 @@ final class KeyReader {
                             switch buffer[0] {
                             case 0x03: return .terminate
                             case 0x04: return .delete
+                            case 0x0B: return .deleteToEnd
                             case 0x15: return .deleteToStart
                             case 0x7F: return .backspace
                             default: return .character(Character(.init(buffer[0])))
@@ -282,6 +283,9 @@ func runSelector<T: CustomStringConvertible & Sendable & Equatable, E: Error>(
             showFilter(viewState: viewState)
         case .key(.delete):
             viewState.editFilter(.delete)
+            showFilter(viewState: viewState)
+        case .key(.deleteToEnd):
+            viewState.editFilter(.deleteToEnd)
             showFilter(viewState: viewState)
         case .key(.deleteToStart):
             viewState.editFilter(.deleteToStart)
