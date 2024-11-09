@@ -233,7 +233,7 @@ enum Event<T: CustomStringConvertible & Sendable> {
 }
 
 @MainActor
-func runSelector<T: CustomStringConvertible & Sendable, E: Error>(
+func runSelector<T: CustomStringConvertible & Sendable & Equatable, E: Error>(
     choices: some AsyncSequence<T, E> & Sendable
 ) async throws -> [T] {
     let terminalSize = TerminalSize.current()

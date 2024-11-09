@@ -6,7 +6,7 @@
 //
 
 @MainActor
-final class ViewState<T: CustomStringConvertible & Sendable> {
+final class ViewState<T: CustomStringConvertible & Sendable & Equatable> {
     let height: Int
 
     var current: Int?
