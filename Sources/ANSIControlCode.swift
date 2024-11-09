@@ -12,6 +12,7 @@ enum ANSIControlCode {
     case literal(String)
     case moveCursor(x: Int, y: Int)
     case moveCursorDown(n: Int)
+    case moveCursorToColumn(n: Int)
     case moveCursorUp(n: Int)
     case restoreCursorPosition
     case saveCursorPosition
@@ -27,6 +28,7 @@ enum ANSIControlCode {
         case let .literal(str): return .init(rawValue: str, escape: false)
         case let .moveCursor(x: x, y: y): return .init(rawValue: "[\(y + 1);\(x + 1)H")
         case let .moveCursorDown(n: n): return .init(rawValue: "[\(n)B")
+        case let .moveCursorToColumn(n: n): return .init(rawValue: "[\(n)G")
         case let .moveCursorUp(n: n): return .init(rawValue: "[\(n)A")
         case .restoreCursorPosition: return .init(rawValue: "8")
         case .saveCursorPosition: return .init(rawValue: "7")
