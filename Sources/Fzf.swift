@@ -85,29 +85,37 @@ func moveUp<T>(viewState: ViewState<T>) {
         fatalError()
     }
 
-    outputCode(.moveCursor(x: 0, y: currentLine))
-    print(" ")
+    outputCodes([
+        .moveCursor(x: 0, y: currentLine),
+        .literal(" "),
+    ])
 
     if currentLine > 4 || !viewState.canScrollUp {
         // we don't need to scroll or we can't scroll
-        outputCode(.moveCursor(x: 0, y: currentLine - 1))
-        print(">")
+        outputCodes([
+            .moveCursor(x: 0, y: currentLine - 1),
+            .literal(">"),
+            .moveCursor(x: 0, y: viewState.height),
+        ])
         viewState.moveUp()
-        outputCode(.moveCursor(x: 0, y: viewState.height))
     } else {
-        outputCode(.moveToLastLine(viewState: viewState))
-        outputCode(.clearLine)
-        outputCode(.moveCursor(x: 0, y: 0))
-        outputCode(.insertLines(1))
+        outputCodes([
+            .moveToLastLine(viewState: viewState),
+            .clearLine,
+            .moveCursor(x: 0, y: 0),
+            .insertLines(1),
+        ])
         viewState.moveUp()
         viewState.scrollUp()
 
         print("  ", viewState.choices[viewState.visibleLines.lowerBound], separator: "")
         guard let newCurrentLine = viewState.line(forChoiceIndex: current - 1) else { fatalError() }
-        outputCode(.moveCursor(x: 0, y: newCurrentLine))
-        print("> ", separator: "")
-        outputCode(.moveCursor(x: 0, y: viewState.height))
-        outputCode(.clearLine)
+        outputCodes([
+            .moveCursor(x: 0, y: newCurrentLine),
+            .literal("> "),
+            .moveCursor(x: 0, y: viewState.height),
+            .clearLine,
+        ])
     }
 }
 
@@ -118,19 +126,25 @@ func moveDown<T>(viewState: ViewState<T>) {
         fatalError()
     }
 
-    outputCode(.moveCursor(x: 0, y: currentLine))
-    print("  ")
+    outputCodes([
+        .moveCursor(x: 0, y: currentLine),
+        .literal("  "),
+    ])
 
     if currentLine < viewState.height - 4 || !viewState.canScrollDown {
-        outputCode(.moveCursor(x: 0, y: currentLine + 1))
-        print(">")
+        outputCodes([
+            .moveCursor(x: 0, y: currentLine + 1),
+            .literal(">"),
+        ])
         viewState.moveDown()
         outputCode(.moveBottom(viewState: viewState))
     } else {
-        outputCode(.moveCursor(x: 0, y: 0))
-        outputCode(.clearLine)
-        outputCode(.moveToLastLine(viewState: viewState))
-        outputCode(.scrollUp(1))
+        outputCodes([
+            .moveCursor(x: 0, y: 0),
+            .clearLine,
+            .moveToLastLine(viewState: viewState),
+            .scrollUp(1),
+        ])
 
         viewState.moveDown()
         viewState.scrollDown()
@@ -139,10 +153,11 @@ func moveDown<T>(viewState: ViewState<T>) {
 
         guard let newCurrentLine = viewState.line(forChoiceIndex: current + 1) else { fatalError() }
 
-        outputCode(.moveCursor(x: 0, y: newCurrentLine))
-        print("> ")
-
-        outputCode(.moveBottom(viewState: viewState))
+        outputCodes([
+            .moveCursor(x: 0, y: newCurrentLine),
+            .literal("> "),
+            .moveBottom(viewState: viewState),
+        ])
     }
 }
 
