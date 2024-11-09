@@ -194,6 +194,7 @@ final class KeyReader {
                         if bytesRead == 1 {
                             switch buffer[0] {
                             case 0x03: return .terminate
+                            case 0x04: return .delete
                             case 0x7F: return .backspace
                             default: return .character(Character(.init(buffer[0])))
                             }
@@ -277,6 +278,9 @@ func runSelector<T: CustomStringConvertible & Sendable & Equatable, E: Error>(
             showFilter(viewState: viewState)
         case let .key(.character(character)):
             viewState.editFilter(.insert(character))
+            showFilter(viewState: viewState)
+        case .key(.delete):
+            viewState.editFilter(.delete)
             showFilter(viewState: viewState)
         case .key(.down):
             withSavedCursorPosition {

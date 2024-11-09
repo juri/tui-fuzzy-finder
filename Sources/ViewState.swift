@@ -77,6 +77,13 @@ final class ViewState<T: CustomStringConvertible & Sendable & Equatable> {
                 self.filter = filter
                 self.editPosition -= 1
             }
+        case .delete:
+            var filter = self._filter
+            let index = filter.index(filter.startIndex, offsetBy: self.editPosition)
+            if index < filter.endIndex {
+                filter.remove(at: index)
+                self.filter = filter
+            }
         case let .insert(character):
             var filter = self._filter
             filter.insert(character, at: filter.index(filter.startIndex, offsetBy: self.editPosition))
@@ -143,6 +150,7 @@ final class ViewState<T: CustomStringConvertible & Sendable & Equatable> {
 extension ViewState {
     enum EditAction {
         case backspace
+        case delete
         case insert(Character)
         case left
         case right
