@@ -37,15 +37,17 @@ final class ViewState<T: CustomStringConvertible & Sendable> {
 
         Task {
             for await filteredChoices in self.choiceFilter.output {
-                self.choices = filteredChoices
-
                 self.visibleLines =
                     max(filteredChoices.count - height + 2, 0)...max(filteredChoices.count - 1, 0)
                 if filteredChoices.count == 0 {
                     self.current = nil
+                } else if var current = self.current {
+                    current += filteredChoices.count - self.choices.count
+                    self.current = current
                 } else if self.current == nil {
                     self.current = 0
                 }
+                self.choices = filteredChoices
 
                 outputContinuation.yield()
             }
