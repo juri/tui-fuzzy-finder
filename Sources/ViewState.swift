@@ -70,20 +70,20 @@ final class ViewState<T: CustomStringConvertible & Sendable & Equatable> {
 
     func editFilter(_ action: EditAction) {
         switch action {
-        case .left:
-            self.editPosition = max(self.editPosition - 1, 0)
-        case .right:
-            self.editPosition = min(self.editPosition + 1, self._filter.count)
-        case let .insert(character):
-            var filter = self._filter
-            filter.insert(character, at: filter.index(filter.startIndex, offsetBy: self.editPosition))
-            self.filter = filter
-            self.editPosition += 1
         case .backspace:
             var filter = self._filter
             filter.remove(at: filter.index(filter.startIndex, offsetBy: self.editPosition - 1))
             self.filter = filter
             self.editPosition -= 1
+        case let .insert(character):
+            var filter = self._filter
+            filter.insert(character, at: filter.index(filter.startIndex, offsetBy: self.editPosition))
+            self.filter = filter
+            self.editPosition += 1
+        case .left:
+            self.editPosition = max(self.editPosition - 1, 0)
+        case .right:
+            self.editPosition = min(self.editPosition + 1, self._filter.count)
         }
     }
 
