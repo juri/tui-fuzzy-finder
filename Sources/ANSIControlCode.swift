@@ -9,6 +9,7 @@ enum ANSIControlCode {
     case clearLine
     case clearScreen
     case insertLines(Int)
+    case literal(String)
     case moveCursor(x: Int, y: Int)
     case moveCursorDown(n: Int)
     case moveCursorUp(n: Int)
@@ -23,6 +24,7 @@ enum ANSIControlCode {
         case .clearLine: return .init(rawValue: "[2K")
         case .clearScreen: return .init(rawValue: "[2J")
         case let .insertLines(n): return .init(rawValue: "[\(n)L")
+        case let .literal(str): return .init(rawValue: str, escape: false)
         case let .moveCursor(x: x, y: y): return .init(rawValue: "[\(y + 1);\(x + 1)H")
         case let .moveCursorDown(n: n): return .init(rawValue: "[\(n)B")
         case let .moveCursorUp(n: n): return .init(rawValue: "[\(n)A")
@@ -43,10 +45,11 @@ enum ANSIControlCode {
     }
 }
 
-struct ANSICommand: RawRepresentable {
+struct ANSICommand {
     var rawValue: String
+    var escape: Bool = true
 
     var message: String {
-        "\u{001B}\(self.rawValue)"
+        "\(self.escape ? "\u{001B}" : "")\(self.rawValue)"
     }
 }
