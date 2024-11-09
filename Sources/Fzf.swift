@@ -61,6 +61,7 @@ func fillScreen<T>(viewState: ViewState<T>) {
 @MainActor
 func fillScreen_<T>(viewState: ViewState<T>) {
     outputCode(.moveCursor(x: 0, y: 0))
+    outputCode(.clearLine)
     for _ in 0..<viewState.height - 2 {
         outputCode(.moveCursorDown(n: 1))
         outputCode(.clearLine)
