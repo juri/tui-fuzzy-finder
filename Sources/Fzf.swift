@@ -191,11 +191,11 @@ final class KeyReader {
                         let bytesRead = read(STDIN_FILENO, &buffer, 3)
                         debug("bytesRead: \(bytesRead), buffer: \(buffer)")
                         if bytesRead == 1 {
-                            if buffer[0] == 0x03 {
-                                return .terminate
+                            switch buffer[0] {
+                            case 0x03: return .terminate
+                            case 0x7F: return .backspace
+                            default: return .character(Character(.init(buffer[0])))
                             }
-                            let char = Character(.init(buffer[0]))
-                            return .character(char)
                         }
                         if bytesRead == 3 && buffer[0] == 0x1B && buffer[1] == 0x5B {
                             switch buffer[2] {
@@ -269,6 +269,9 @@ func runSelector<T: CustomStringConvertible & Sendable & Equatable, E: Error>(
     eventLoop: for try await event in merge(keyEvents, choiceEvents, viewStateUpdateEvents) {
         debug("got event: \(event)")
         switch event {
+        case .key(.backspace):
+            viewState.filter = String(viewState.filter.dropLast())
+            showFilter(viewState: viewState)
         case let .key(.character(character)):
             viewState.addToFilter(character)
             showFilter(viewState: viewState)
