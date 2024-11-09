@@ -59,7 +59,7 @@ func fillScreen<T>(viewState: ViewState<T>) {
 }
 
 @MainActor
-func fillScreen_<T>(viewState: ViewState<T>) {
+func redrawChoices<T>(viewState: ViewState<T>) {
     outputCode(.moveCursor(x: 0, y: 0))
     outputCode(.clearLine)
     for _ in 0..<viewState.height - 2 {
@@ -285,11 +285,11 @@ func runSelector<T: CustomStringConvertible & Sendable, E: Error>(
         case let .choice(choice):
             viewState.addChoice(choice)
             withSavedCursorPosition {
-                fillScreen_(viewState: viewState)
+                redrawChoices(viewState: viewState)
             }
         case .viewStateChanged:
             withSavedCursorPosition {
-                fillScreen_(viewState: viewState)
+                redrawChoices(viewState: viewState)
             }
         }
     }
