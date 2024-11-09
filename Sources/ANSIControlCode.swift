@@ -10,6 +10,7 @@ enum ANSIControlCode {
     case clearScreen
     case insertLines(Int)
     case moveCursor(x: Int, y: Int)
+    case moveCursorDown(n: Int)
     case moveCursorUp(n: Int)
     case restoreCursorPosition
     case saveCursorPosition
@@ -22,6 +23,7 @@ enum ANSIControlCode {
         case .clearLine: return .init(rawValue: "[2K")
         case .clearScreen: return .init(rawValue: "[2J")
         case let .insertLines(n): return .init(rawValue: "[\(n)L")
+        case let .moveCursor(x: x, y: y): return .init(rawValue: "[\(y + 1);\(x + 1)H")
         case let .moveCursorDown(n: n): return .init(rawValue: "[\(n)B")
         case let .moveCursorUp(n: n): return .init(rawValue: "[\(n)A")
         case .restoreCursorPosition: return .init(rawValue: "8")

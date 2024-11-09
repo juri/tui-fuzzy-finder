@@ -23,8 +23,30 @@ func outputCode(_ code: ANSIControlCode) {
 }
 
 @MainActor
-func fillScreen<T>(viewState: ViewState<T>) throws {
+func outputCodes(_ codes: [ANSIControlCode]) {
+    write(codes.map(\.ansiCommand.message))
+}
+
+@MainActor
+func withSavedCursorPosition<T>(_ body: () throws -> T) rethrows -> T {
+    outputCodes([
+        .setCursorHidden(true),
+        .saveCursorPosition,
+    ])
+    defer {
+        outputCodes([
+            .restoreCursorPosition,
+            .setCursorHidden(false),
+        ])
+    }
+
+    return try body()
+}
+
+@MainActor
+func fillScreen<T>(viewState: ViewState<T>) {
     outputCode(.clearScreen)
+
     let choices = viewState.choices.suffix(viewState.visibleLines.count)
     guard let startLine = viewState.line(forChoiceIndex: viewState.visibleLines.lowerBound) else {
         fatalError()
@@ -39,15 +61,31 @@ func fillScreen<T>(viewState: ViewState<T>) throws {
 }
 
 @MainActor
+func fillScreen_<T>(viewState: ViewState<T>) {
+    outputCode(.moveCursor(x: 0, y: 0))
+    for _ in 0..<viewState.height - 2 {
+        outputCode(.moveCursorDown(n: 1))
+        outputCode(.clearLine)
+    }
+
+    let choices = viewState.choices.suffix(viewState.visibleLines.count)
+    guard let startLine = viewState.line(forChoiceIndex: viewState.visibleLines.lowerBound) else {
+        fatalError()
+    }
+    for (lineNumber, (index, choice)) in zip(0..., zip(choices.indices, choices)) {
+        outputCode(.moveCursor(x: 0, y: startLine + lineNumber))
+        print(index == viewState.current ? "> " : "  ", terminator: "")
+        print(choice, lineNumber)
+    }
+}
+
+@MainActor
 func moveUp<T>(viewState: ViewState<T>) {
     guard let current = viewState.current, current > 0 else { return }
     guard let currentLine = viewState.line(forChoiceIndex: current) else {
         debug("moveUp didn't receive line for current \(current)")
         fatalError()
     }
-
-    outputCode(.setCursorHidden(true))
-    defer { outputCode(.setCursorHidden(false)) }
 
     outputCode(.moveCursor(x: 0, y: currentLine))
     print(" ")
@@ -82,9 +120,6 @@ func moveDown<T>(viewState: ViewState<T>) {
         fatalError()
     }
 
-    outputCode(.setCursorHidden(true))
-    defer { outputCode(.setCursorHidden(false)) }
-
     outputCode(.moveCursor(x: 0, y: currentLine))
     print("  ")
 
@@ -114,10 +149,10 @@ func moveDown<T>(viewState: ViewState<T>) {
 
 @MainActor
 func showFilter<T>(viewState: ViewState<T>) {
-    outputCode(.saveCursorPosition)
-    defer { outputCode(.restoreCursorPosition) }
-
-    outputCode(.moveBottom(viewState: viewState))
+    outputCodes([
+        .moveBottom(viewState: viewState),
+        .clearLine,
+    ])
     write(viewState.filter)
 }
 
@@ -201,7 +236,7 @@ func runSelector<T: CustomStringConvertible & Sendable, E: Error>(
     )
 
     debug("Visible lines: \(viewState.visibleLines)")
-    try fillScreen(viewState: viewState)
+    fillScreen(viewState: viewState)
 
     let keyReader = KeyReader(tty: tty)
     let keyEvents = keyReader.keys
@@ -222,15 +257,25 @@ func runSelector<T: CustomStringConvertible & Sendable, E: Error>(
         case let .key(.character(character)):
             viewState.addToFilter(character)
             showFilter(viewState: viewState)
-        case .key(.down): moveDown(viewState: viewState)
-        case .key(.up): moveUp(viewState: viewState)
+        case .key(.down):
+            withSavedCursorPosition {
+                moveDown(viewState: viewState)
+            }
+        case .key(.up):
+            withSavedCursorPosition {
+                moveUp(viewState: viewState)
+            }
         case .key(.terminate): break eventLoop
         case .key(nil): break
         case let .choice(choice):
             viewState.addChoice(choice)
-            try fillScreen(viewState: viewState)
+            withSavedCursorPosition {
+                fillScreen_(viewState: viewState)
+            }
         case .viewStateChanged:
-            try fillScreen(viewState: viewState)
+            withSavedCursorPosition {
+                fillScreen_(viewState: viewState)
+            }
         }
     }
 
@@ -242,7 +287,7 @@ func runSelector<T: CustomStringConvertible & Sendable, E: Error>(
 struct Fzf {
     static func main() async throws {
         let choices = AsyncStream(unfolding: {
-            try! await Task.sleep(for: .seconds(1.5))
+            try! await Task.sleep(for: .seconds(1))
             return "line \(Date())"
         })
 
