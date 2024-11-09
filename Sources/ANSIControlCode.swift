@@ -19,16 +19,16 @@ enum ANSIControlCode {
 
     var ansiCommand: ANSICommand {
         switch self {
-        case .clearLine: return .init(rawValue: "2K")
-        case .clearScreen: return .init(rawValue: "2J")
-        case let .insertLines(n): return .init(rawValue: "\(n)L")
-        case let .moveCursor(x: x, y: y): return .init(rawValue: "\(y + 1);\(x + 1)H")
-        case let .moveCursorUp(n: n): return .init(rawValue: "\(n)A")
+        case .clearLine: return .init(rawValue: "[2K")
+        case .clearScreen: return .init(rawValue: "[2J")
+        case let .insertLines(n): return .init(rawValue: "[\(n)L")
+        case let .moveCursorDown(n: n): return .init(rawValue: "[\(n)B")
+        case let .moveCursorUp(n: n): return .init(rawValue: "[\(n)A")
         case .restoreCursorPosition: return .init(rawValue: "8")
         case .saveCursorPosition: return .init(rawValue: "7")
-        case let .scrollDown(n): return .init(rawValue: "\(n)T")
-        case let .scrollUp(n): return .init(rawValue: "\(n)S")
-        case let .setCursorHidden(hidden): return .init(rawValue: "?25\(hidden ? "l" : "h")")
+        case let .scrollDown(n): return .init(rawValue: "[\(n)T")
+        case let .scrollUp(n): return .init(rawValue: "[\(n)S")
+        case let .setCursorHidden(hidden): return .init(rawValue: "[?25\(hidden ? "l" : "h")")
         }
     }
 
@@ -45,6 +45,6 @@ struct ANSICommand: RawRepresentable {
     var rawValue: String
 
     var message: String {
-        "\u{001B}[\(self.rawValue)"
+        "\u{001B}\(self.rawValue)"
     }
 }
