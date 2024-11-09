@@ -130,6 +130,7 @@ func moveDown<T>(viewState: ViewState<T>) {
         outputCode(.moveCursor(x: 0, y: 0))
         outputCode(.clearLine)
         outputCode(.moveToLastLine(viewState: viewState))
+        outputCode(.scrollUp(1))
 
         viewState.moveDown()
         viewState.scrollDown()
