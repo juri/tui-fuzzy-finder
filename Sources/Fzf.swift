@@ -334,7 +334,7 @@ struct Fzf {
     }
 }
 
-private func debug(_ message: String, reset: Bool = false) {
+func debug(_ message: String, reset: Bool = false) {
     let fh = FileHandle(forUpdatingAtPath: "/tmp/swiftfzfdebug.log")!
     if reset {
         try! fh.truncate(atOffset: 0)
