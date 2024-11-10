@@ -58,8 +58,10 @@ func fillScreen<T>(viewState: ViewState<T>) {
     for (lineNumber, (index, choiceItem)) in zip(0..., zip(choices.indices, choices)) {
         outputCode(.moveCursor(x: 0, y: startLine + lineNumber))
         let selectionMarker = choiceMarker(choiceItem: choiceItem, viewState: viewState)
-        print(index == viewState.current ? ">\(selectionMarker)" : " \(selectionMarker)", terminator: "")
-        print(choiceItem.choice, lineNumber)
+        write([
+            index == viewState.current ? ">\(selectionMarker)" : " \(selectionMarker)",
+            String(describing: choiceItem.choice),
+        ])
     }
     outputCode(.moveBottom(viewState: viewState))
     showFilter(viewState: viewState)
@@ -81,8 +83,10 @@ func redrawChoices<T>(viewState: ViewState<T>) {
     for (lineNumber, (index, choiceItem)) in zip(0..., zip(choices.indices, choices)) {
         outputCode(.moveCursor(x: 0, y: startLine + lineNumber))
         let selectionMarker = choiceMarker(choiceItem: choiceItem, viewState: viewState)
-        print(index == viewState.current ? ">\(selectionMarker)" : " \(selectionMarker)", terminator: "")
-        print(choiceItem.choice, lineNumber)
+        write([
+            index == viewState.current ? ">\(selectionMarker)" : " \(selectionMarker)",
+            String(describing: choiceItem.choice),
+        ])
     }
 }
 
