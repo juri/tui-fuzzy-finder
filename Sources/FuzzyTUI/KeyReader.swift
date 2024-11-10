@@ -8,7 +8,7 @@ final class KeyReader {
     private let tty: TTY
 
     init(tty: TTY) {
-        self.queue = DispatchQueue(label: "fi.juripakaste.swiftfzf.keyReader")
+        self.queue = DispatchQueue(label: "fuzzytui.keyReader")
         self.tty = tty
     }
 
