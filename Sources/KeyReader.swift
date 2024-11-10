@@ -31,6 +31,7 @@ final class KeyReader {
                             switch buffer[0] {
                             case 0x03: return .terminate
                             case 0x04: return .delete
+                            case 0x09: return .tab
                             case 0x0B: return .deleteToEnd
                             case 0x15: return .deleteToStart
                             case 0x7F: return .backspace

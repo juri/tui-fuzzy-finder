@@ -41,6 +41,13 @@ func withSavedCursorPosition<T>(_ body: () throws -> T) rethrows -> T {
 }
 
 @MainActor
+func choiceMarker<T>(choiceItem: FilteredChoiceItem<T>, viewState: ViewState<T>) -> String {
+    let isSelected = viewState.isSelected(choiceItem)
+    let selectionMarker = isSelected ? "+" : " "
+    return selectionMarker
+}
+
+@MainActor
 func fillScreen<T>(viewState: ViewState<T>) {
     outputCode(.clearScreen)
 
@@ -50,7 +57,8 @@ func fillScreen<T>(viewState: ViewState<T>) {
     }
     for (lineNumber, (index, choiceItem)) in zip(0..., zip(choices.indices, choices)) {
         outputCode(.moveCursor(x: 0, y: startLine + lineNumber))
-        print(index == viewState.current ? "> " : "  ", terminator: "")
+        let selectionMarker = choiceMarker(choiceItem: choiceItem, viewState: viewState)
+        print(index == viewState.current ? ">\(selectionMarker)" : " \(selectionMarker)", terminator: "")
         print(choiceItem.choice, lineNumber)
     }
     outputCode(.moveBottom(viewState: viewState))
@@ -72,7 +80,8 @@ func redrawChoices<T>(viewState: ViewState<T>) {
     }
     for (lineNumber, (index, choiceItem)) in zip(0..., zip(choices.indices, choices)) {
         outputCode(.moveCursor(x: 0, y: startLine + lineNumber))
-        print(index == viewState.current ? "> " : "  ", terminator: "")
+        let selectionMarker = choiceMarker(choiceItem: choiceItem, viewState: viewState)
+        print(index == viewState.current ? ">\(selectionMarker)" : " \(selectionMarker)", terminator: "")
         print(choiceItem.choice, lineNumber)
     }
 }
@@ -108,11 +117,13 @@ func moveUp<T>(viewState: ViewState<T>) {
         viewState.moveUp()
         viewState.scrollUp()
 
-        print("  ", viewState.choices[viewState.visibleLines.lowerBound].choice, separator: "")
+        let choiceItem = viewState.choices[viewState.visibleLines.lowerBound]
+        let selectionMarker = choiceMarker(choiceItem: choiceItem, viewState: viewState)
+        print(" \(selectionMarker)", choiceItem.choice, separator: "")
         guard let newCurrentLine = viewState.line(forChoiceIndex: current - 1) else { fatalError() }
         outputCodes([
             .moveCursor(x: 0, y: newCurrentLine),
-            .literal("> "),
+            .literal(">"),
             .moveCursor(x: 0, y: viewState.height),
             .clearLine,
         ])
@@ -128,7 +139,7 @@ func moveDown<T>(viewState: ViewState<T>) {
 
     outputCodes([
         .moveCursor(x: 0, y: currentLine),
-        .literal("  "),
+        .literal(" "),
     ])
 
     if currentLine < viewState.height - 4 || !viewState.canScrollDown {
@@ -149,13 +160,15 @@ func moveDown<T>(viewState: ViewState<T>) {
         viewState.moveDown()
         viewState.scrollDown()
 
-        print("  ", viewState.choices[viewState.visibleLines.upperBound].choice, separator: "")
+        let choiceItem = viewState.choices[viewState.visibleLines.upperBound]
+        let selectionMarker = choiceMarker(choiceItem: choiceItem, viewState: viewState)
+        print(" \(selectionMarker)", choiceItem.choice, separator: "")
 
         guard let newCurrentLine = viewState.line(forChoiceIndex: current + 1) else { fatalError() }
 
         outputCodes([
             .moveCursor(x: 0, y: newCurrentLine),
-            .literal("> "),
+            .literal(">"),
             .moveBottom(viewState: viewState),
         ])
     }
@@ -232,6 +245,11 @@ func runSelector<T: CustomStringConvertible & Sendable & Equatable, E: Error>(
         case .key(.down):
             withSavedCursorPosition {
                 moveDown(viewState: viewState)
+            }
+        case .key(.tab):
+            viewState.toggleCurrentSelection()
+            withSavedCursorPosition {
+                redrawChoices(viewState: viewState)
             }
         case .key(.up):
             withSavedCursorPosition {

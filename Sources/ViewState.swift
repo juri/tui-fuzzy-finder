@@ -18,6 +18,7 @@ final class ViewState<T: CustomStringConvertible & Sendable & Equatable> {
     private(set) var editPosition: Int = 0
     private(set) var unfilteredChoices: [T]
     private(set) var visibleLines: ClosedRange<Int>
+    private(set) var unfilteredSelection: Set<Int> = []
 
     private var _filter: String = ""
 
@@ -156,6 +157,30 @@ final class ViewState<T: CustomStringConvertible & Sendable & Equatable> {
         }
         return max(0, (self.height - self.visibleLines.count)) + index
             - self.visibleLines.lowerBound - 2
+    }
+
+    @discardableResult
+    func toggleCurrentSelection() -> Bool {
+        guard let current = self.current else { return false }
+        return self.toggleSelection(current)
+    }
+
+    @discardableResult
+    func toggleSelection(_ index: Int) -> Bool {
+        let unfilteredIndex = self.choices[index].index
+        let isSelected = !self.unfilteredSelection.contains(unfilteredIndex)
+        if isSelected {
+            self.unfilteredSelection.insert(unfilteredIndex)
+        } else {
+            self.unfilteredSelection.remove(unfilteredIndex)
+        }
+
+        return isSelected
+    }
+
+    func isSelected(_ choiceItem: FilteredChoiceItem<T>) -> Bool {
+        let unfilteredIndex = choiceItem.index
+        return self.unfilteredSelection.contains(unfilteredIndex)
     }
 }
 
