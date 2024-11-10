@@ -100,6 +100,8 @@ final class ViewState<T: Selectable> {
             self.editPosition += 1
         case .left:
             self.editPosition = max(self.editPosition - 1, 0)
+        case .moveToEnd:
+            self.editPosition = self.filter.count
         case .moveToStart:
             self.editPosition = 0
         case .right:
@@ -190,6 +192,7 @@ extension ViewState {
         case deleteToStart
         case insert(Character)
         case left
+        case moveToEnd
         case moveToStart
         case right
     }

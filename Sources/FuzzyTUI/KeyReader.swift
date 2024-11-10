@@ -25,6 +25,7 @@ final class KeyReader {
                             case 0x01: return .moveToStart
                             case 0x03: return .terminate
                             case 0x04: return .delete
+                            case 0x05: return .moveToEnd
                             case 0x09: return .tab
                             case 0x0B: return .deleteToEnd
                             case 0x15: return .deleteToStart

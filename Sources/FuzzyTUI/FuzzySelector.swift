@@ -252,6 +252,9 @@ public func runSelector<T: Selectable, E: Error>(
             withSavedCursorPosition {
                 moveDown(viewState: viewState)
             }
+        case .key(.moveToEnd):
+            viewState.editFilter(.moveToEnd)
+            showFilter(viewState: viewState)
         case .key(.moveToStart):
             viewState.editFilter(.moveToStart)
             showFilter(viewState: viewState)

@@ -6,6 +6,7 @@ enum TerminalKey {
     case deleteToStart
     case down
     case left
+    case moveToEnd
     case moveToStart
     case right
     case tab
