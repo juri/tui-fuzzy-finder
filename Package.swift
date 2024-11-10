@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "swiftfzf",
+    name: "tui-fuzzy-finder",
     platforms: [.macOS(.v15)],
     dependencies: [
         .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0")
