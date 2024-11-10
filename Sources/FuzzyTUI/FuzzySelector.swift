@@ -125,10 +125,11 @@ func moveUp<T>(viewState: ViewState<T>) {
 
         let choiceItem = viewState.choices[viewState.visibleLines.lowerBound]
         let selectionMarker = choiceMarker(choiceItem: choiceItem, viewState: viewState)
-        write([
-            " ",
-            selectionMarker,
-            String(describing: choiceItem.choice),
+        outputCodes([
+            .clearLine,
+            .literal(" "),
+            .literal(selectionMarker),
+            .literal(String(describing: choiceItem.choice)),
         ])
         guard let newCurrentLine = viewState.line(forChoiceIndex: current - 1) else { fatalError() }
         outputCodes([
@@ -172,10 +173,11 @@ func moveDown<T>(viewState: ViewState<T>) {
 
         let choiceItem = viewState.choices[viewState.visibleLines.upperBound]
         let selectionMarker = choiceMarker(choiceItem: choiceItem, viewState: viewState)
-        write([
-            " ",
-            selectionMarker,
-            String(describing: choiceItem.choice),
+        outputCodes([
+            .clearLine,
+            .literal(" "),
+            .literal(selectionMarker),
+            .literal(String(describing: choiceItem.choice)),
         ])
 
         guard let newCurrentLine = viewState.line(forChoiceIndex: current + 1) else { fatalError() }
