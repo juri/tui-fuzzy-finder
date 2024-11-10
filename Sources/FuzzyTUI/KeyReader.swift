@@ -22,6 +22,7 @@ final class KeyReader {
                         debug("bytesRead: \(bytesRead), buffer: \(buffer)")
                         if bytesRead == 1 {
                             switch buffer[0] {
+                            case 0x01: return .moveToStart
                             case 0x03: return .terminate
                             case 0x04: return .delete
                             case 0x09: return .tab
