@@ -1,10 +1,3 @@
-//
-//  TTY.swift
-//  swiftfzf
-//
-//  Created by Juri Pakaste on 3.11.2024.
-//
-
 import Foundation
 
 struct TTY {

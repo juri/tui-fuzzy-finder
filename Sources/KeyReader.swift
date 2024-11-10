@@ -1,10 +1,3 @@
-//
-//  KeyReader.swift
-//  swiftfzf
-//
-//  Created by Juri Pakaste on 10.11.2024.
-//
-
 import Foundation
 import Synchronization
 

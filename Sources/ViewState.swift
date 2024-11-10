@@ -1,10 +1,3 @@
-//
-//  ViewState.swift
-//  swiftfzf
-//
-//  Created by Juri Pakaste on 3.11.2024.
-//
-
 @MainActor
 final class ViewState<T: Selectable> {
     let height: Int

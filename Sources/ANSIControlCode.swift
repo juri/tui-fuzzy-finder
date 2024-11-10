@@ -1,10 +1,3 @@
-//
-//  ANSIControlCode.swift
-//  swiftfzf
-//
-//  Created by Juri Pakaste on 3.11.2024.
-//
-
 enum ANSIControlCode {
     case clearLine
     case clearScreen

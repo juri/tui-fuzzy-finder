@@ -1,10 +1,3 @@
-//
-//  AsyncArray.swift
-//  swiftfzf
-//
-//  Created by Juri Pakaste on 9.11.2024.
-//
-
 struct AsyncArray<Element>: AsyncSequence {
     typealias Element = Element
 
