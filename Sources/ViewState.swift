@@ -99,7 +99,10 @@ final class ViewState<T: CustomStringConvertible & Sendable & Equatable> {
             self.editPosition = 0
         case let .insert(character):
             var filter = self._filter
-            filter.insert(character, at: filter.index(filter.startIndex, offsetBy: self.editPosition))
+            filter.insert(
+                character,
+                at: filter.index(filter.startIndex, offsetBy: self.editPosition)
+            )
             self.filter = filter
             self.editPosition += 1
         case .left:
