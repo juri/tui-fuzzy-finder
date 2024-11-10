@@ -2,7 +2,7 @@ import FuzzyTUI
 
 @main
 @MainActor
-struct Fzf {
+struct FuzzyCLI {
     static func main() async throws {
         //        let choices = AsyncStream(unfolding: {
         //            try! await Task.sleep(for: .seconds(0.8))
