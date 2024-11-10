@@ -43,6 +43,9 @@ final class ViewState<T: Selectable> {
                     self.current = nil
                 } else if var current = self.current {
                     current += filteredChoices.count - self.choices.count
+                    if !visibleLines.contains(current) {
+                        current = visibleLines.lowerBound
+                    }
                     self.current = current
                 } else if self.current == nil {
                     self.current = 0
