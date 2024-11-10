@@ -11,5 +11,6 @@ enum TerminalKey {
     case right
     case tab
     case terminate
+    case transpose
     case up
 }

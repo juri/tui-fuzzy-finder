@@ -106,6 +106,16 @@ final class ViewState<T: Selectable> {
             self.editPosition = 0
         case .right:
             self.editPosition = min(self.editPosition + 1, self._filter.count)
+        case .transpose:
+            var filter = self.filter
+            let index = filter.index(filter.startIndex, offsetBy: self.editPosition)
+            guard index < filter.endIndex && index > filter.startIndex else { return }
+            let previousIndex = filter.index(before: index)
+            let nextIndex = filter.index(after: index)
+            let (currentCharacter, previousCharacter) = (filter[index], filter[previousIndex])
+            filter.replaceSubrange(previousIndex..<index, with: String(currentCharacter))
+            filter.replaceSubrange(index..<nextIndex, with: String(previousCharacter))
+            self.filter = filter
         }
     }
 
@@ -195,6 +205,7 @@ extension ViewState {
         case moveToEnd
         case moveToStart
         case right
+        case transpose
     }
 }
 

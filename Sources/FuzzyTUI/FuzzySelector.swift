@@ -263,6 +263,9 @@ public func runSelector<T: Selectable, E: Error>(
             withSavedCursorPosition {
                 redrawChoices(viewState: viewState)
             }
+        case .key(.transpose):
+            viewState.editFilter(.transpose)
+            showFilter(viewState: viewState)
         case .key(.up):
             withSavedCursorPosition {
                 moveUp(viewState: viewState)

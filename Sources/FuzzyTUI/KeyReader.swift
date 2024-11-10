@@ -28,6 +28,7 @@ final class KeyReader {
                             case 0x05: return .moveToEnd
                             case 0x09: return .tab
                             case 0x0B: return .deleteToEnd
+                            case 0x14: return .transpose
                             case 0x15: return .deleteToStart
                             case 0x7F: return .backspace
                             default: return .character(Character(.init(buffer[0])))
