@@ -6,7 +6,7 @@
 //
 
 @MainActor
-final class ViewState<T: CustomStringConvertible & Sendable & Equatable> {
+final class ViewState<T: Selectable> {
     let height: Int
 
     var current: Int?
@@ -199,7 +199,7 @@ extension ViewState {
     }
 }
 
-private actor ChoiceFilter<T: CustomStringConvertible & Sendable & Equatable> {
+private actor ChoiceFilter<T: Selectable> {
     struct Job {
         var choices: [T]
         var filter: String
@@ -255,7 +255,7 @@ extension ChoiceFilter {
     }
 }
 
-struct FilteredChoiceItem<T: CustomStringConvertible & Sendable & Equatable>: Equatable {
+struct FilteredChoiceItem<T: Selectable>: Equatable {
     var index: Int
     var choice: T
 }
