@@ -262,6 +262,7 @@ public func runSelector<T: Selectable, E: Error>(
             withSavedCursorPosition {
                 moveDown(viewState: viewState)
             }
+            showFilter(viewState: viewState)
         case .key(.moveToEnd):
             viewState.editFilter(.moveToEnd)
             showFilter(viewState: viewState)
@@ -280,6 +281,7 @@ public func runSelector<T: Selectable, E: Error>(
             withSavedCursorPosition {
                 moveUp(viewState: viewState)
             }
+            showFilter(viewState: viewState)
         case .key(.terminate): break eventLoop
         case .key(nil): break
         case let .choice(choice):
