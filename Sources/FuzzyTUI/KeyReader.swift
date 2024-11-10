@@ -17,8 +17,8 @@ final class KeyReader {
             while !self.stopped.withLock({ $0 }) {
                 do {
                     let key = try self.tty.withRawMode { () -> TerminalKey? in
-                        var buffer = [UInt8](repeating: 0, count: 3)
-                        let bytesRead = read(STDIN_FILENO, &buffer, 3)
+                        var buffer = [UInt8](repeating: 0, count: 4)
+                        let bytesRead = read(STDIN_FILENO, &buffer, 4)
                         debug("bytesRead: \(bytesRead), buffer: \(buffer)")
                         if bytesRead == 1 {
                             switch buffer[0] {
@@ -40,10 +40,11 @@ final class KeyReader {
                             case (0x1B, 0x5B, 0x42): return .down
                             case (0x1B, 0x5B, 0x43): return .right
                             case (0x1B, 0x5B, 0x44): return .left
-                            default: return nil
+                            default: break
                             }
                         }
-                        return nil
+                        guard let character = toCharacter(bytes: buffer[0..<bytesRead]) else { return nil }
+                        return .character(character)
                     }
                     callback(.success(key))
                 } catch {
@@ -63,4 +64,9 @@ final class KeyReader {
             }
         }
     }
+}
+
+func toCharacter(bytes: ArraySlice<UInt8>) -> Character? {
+    guard let str = String(bytes: bytes, encoding: .utf8) else { return nil }
+    return Character(str)
 }
