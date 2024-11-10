@@ -1,6 +1,5 @@
 # Swift Terminal Fuzzy Finder
 
-This will be a [fzf] style text UI fuzzy finder library in Swift. Currently not a library and not ready for use.
+`tui-fuzzy-finder` is a [fzf] style text UI fuzzy finder library in Swift.
 
 [fzf]: https://github.com/junegunn/fzf
-
