@@ -200,6 +200,19 @@ func showFilter<T>(viewState: ViewState<T>) {
     ])
 }
 
+@MainActor
+func showStatus<T>(viewState: ViewState<T>) {
+    let status = viewState.status
+    withSavedCursorPosition {
+        outputCodes([
+            .moveBottom(viewState: viewState),
+            .moveCursorUp(n: 1),
+            .clearLine,
+            .literal("  \(status.numberOfVisibleChoices)/\(status.numberOfChoices) (\(status.numberOfSelectedItems))"),
+        ])
+    }
+}
+
 enum Event<T: Selectable> {
     case key(TerminalKey?)
     case choice(T)
@@ -246,23 +259,29 @@ public func runSelector<T: Selectable, E: Error>(
         case .key(.backspace):
             viewState.editFilter(.backspace)
             showFilter(viewState: viewState)
+            showStatus(viewState: viewState)
         case let .key(.character(character)):
             viewState.editFilter(.insert(character))
             showFilter(viewState: viewState)
+            showStatus(viewState: viewState)
         case .key(.delete):
             viewState.editFilter(.delete)
             showFilter(viewState: viewState)
+            showStatus(viewState: viewState)
         case .key(.deleteToEnd):
             viewState.editFilter(.deleteToEnd)
             showFilter(viewState: viewState)
+            showStatus(viewState: viewState)
         case .key(.deleteToStart):
             viewState.editFilter(.deleteToStart)
             showFilter(viewState: viewState)
+            showStatus(viewState: viewState)
         case .key(.down):
             withSavedCursorPosition {
                 moveDown(viewState: viewState)
             }
             showFilter(viewState: viewState)
+            showStatus(viewState: viewState)
         case .key(.moveToEnd):
             viewState.editFilter(.moveToEnd)
             showFilter(viewState: viewState)
@@ -274,14 +293,17 @@ public func runSelector<T: Selectable, E: Error>(
             withSavedCursorPosition {
                 redrawChoices(viewState: viewState)
             }
+            showStatus(viewState: viewState)
         case .key(.transpose):
             viewState.editFilter(.transpose)
             showFilter(viewState: viewState)
+            showStatus(viewState: viewState)
         case .key(.up):
             withSavedCursorPosition {
                 moveUp(viewState: viewState)
             }
             showFilter(viewState: viewState)
+            showStatus(viewState: viewState)
         case .key(.terminate): break eventLoop
         case .key(nil): break
         case let .choice(choice):
@@ -289,10 +311,12 @@ public func runSelector<T: Selectable, E: Error>(
             withSavedCursorPosition {
                 redrawChoices(viewState: viewState)
             }
+            showStatus(viewState: viewState)
         case .viewStateChanged:
             withSavedCursorPosition {
                 redrawChoices(viewState: viewState)
             }
+            showStatus(viewState: viewState)
         case .key(.some(.left)):
             viewState.editFilter(.left)
             showFilter(viewState: viewState)

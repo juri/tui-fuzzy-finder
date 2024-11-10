@@ -195,6 +195,14 @@ final class ViewState<T: Selectable> {
         let unfilteredIndex = choiceItem.index
         return self.unfilteredSelection.contains(unfilteredIndex)
     }
+
+    var status: StatusValues {
+        StatusValues(
+            numberOfChoices: self.unfilteredChoices.count,
+            numberOfVisibleChoices: self.choices.count,
+            numberOfSelectedItems: self.unfilteredSelection.count
+        )
+    }
 }
 
 extension ViewState {
@@ -209,6 +217,12 @@ extension ViewState {
         case moveToStart
         case right
         case transpose
+    }
+
+    struct StatusValues {
+        var numberOfChoices: Int
+        var numberOfVisibleChoices: Int
+        var numberOfSelectedItems: Int
     }
 }
 
