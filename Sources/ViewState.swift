@@ -14,7 +14,7 @@ final class ViewState<T: CustomStringConvertible & Sendable & Equatable> {
     private let choiceFilter: ChoiceFilter<T>
     private let outputStream: AsyncStream<Void>
 
-    private(set) var choices: [T]
+    private(set) var choices: [FilteredChoiceItem<T>]
     private(set) var unfilteredChoices: [T]
     private(set) var visibleLines: ClosedRange<Int>
     private(set) var editPosition: Int = 0
@@ -25,7 +25,7 @@ final class ViewState<T: CustomStringConvertible & Sendable & Equatable> {
         height: Int,
         maxWidth: Int
     ) {
-        self.choices = choices
+        self.choices = choices.enumerated().map(FilteredChoiceItem.init(index:choice:))
         self.unfilteredChoices = choices
         self.choiceFilter = ChoiceFilter()
         self.current = choices.isEmpty ? nil : choices.count - 1
@@ -170,14 +170,14 @@ extension ViewState {
     }
 }
 
-private actor ChoiceFilter<T: CustomStringConvertible & Sendable> {
+private actor ChoiceFilter<T: CustomStringConvertible & Sendable & Equatable> {
     struct Job {
         var choices: [T]
         var filter: String
     }
 
     private typealias InputStream = AsyncStream<Job>
-    private typealias OutputStream = AsyncStream<[T]>
+    private typealias OutputStream = AsyncStream<[FilteredChoiceItem<T>]>
 
     private let inputContinuation: InputStream.Continuation
     private let outputContinuation: OutputStream.Continuation
@@ -203,7 +203,7 @@ private actor ChoiceFilter<T: CustomStringConvertible & Sendable> {
         }
     }
 
-    nonisolated var output: some AsyncSequence<[T], Never> & Sendable {
+    nonisolated var output: some AsyncSequence<[FilteredChoiceItem<T>], Never> & Sendable {
         self.outputStream
     }
 
@@ -215,9 +215,18 @@ private actor ChoiceFilter<T: CustomStringConvertible & Sendable> {
 }
 
 extension ChoiceFilter {
-    private func run(_ job: Job) async -> [T] {
-        guard !job.filter.isEmpty else { return job.choices }
-        let filtered = job.choices.filter { $0.description.contains(job.filter) }
+    private func run(_ job: Job) async -> [FilteredChoiceItem<T>] {
+        guard !job.filter.isEmpty else {
+            return job.choices.enumerated().map(FilteredChoiceItem.init(index:choice:))
+        }
+        let filtered = job.choices.enumerated().filter {
+            $1.description.contains(job.filter)
+        }.map(FilteredChoiceItem.init(index:choice:))
         return filtered
     }
+}
+
+struct FilteredChoiceItem<T: CustomStringConvertible & Sendable & Equatable>: Equatable {
+    var index: Int
+    var choice: T
 }

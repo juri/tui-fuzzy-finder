@@ -49,10 +49,10 @@ func fillScreen<T>(viewState: ViewState<T>) {
     guard let startLine = viewState.line(forChoiceIndex: viewState.visibleLines.lowerBound) else {
         fatalError()
     }
-    for (lineNumber, (index, choice)) in zip(0..., zip(choices.indices, choices)) {
+    for (lineNumber, (index, choiceItem)) in zip(0..., zip(choices.indices, choices)) {
         outputCode(.moveCursor(x: 0, y: startLine + lineNumber))
         print(index == viewState.current ? "> " : "  ", terminator: "")
-        print(choice, lineNumber)
+        print(choiceItem.choice, lineNumber)
     }
     outputCode(.moveBottom(viewState: viewState))
     showFilter(viewState: viewState)
@@ -71,10 +71,10 @@ func redrawChoices<T>(viewState: ViewState<T>) {
     guard let startLine = viewState.line(forChoiceIndex: viewState.visibleLines.lowerBound) else {
         fatalError()
     }
-    for (lineNumber, (index, choice)) in zip(0..., zip(choices.indices, choices)) {
+    for (lineNumber, (index, choiceItem)) in zip(0..., zip(choices.indices, choices)) {
         outputCode(.moveCursor(x: 0, y: startLine + lineNumber))
         print(index == viewState.current ? "> " : "  ", terminator: "")
-        print(choice, lineNumber)
+        print(choiceItem.choice, lineNumber)
     }
 }
 
@@ -109,7 +109,7 @@ func moveUp<T>(viewState: ViewState<T>) {
         viewState.moveUp()
         viewState.scrollUp()
 
-        print("  ", viewState.choices[viewState.visibleLines.lowerBound], separator: "")
+        print("  ", viewState.choices[viewState.visibleLines.lowerBound].choice, separator: "")
         guard let newCurrentLine = viewState.line(forChoiceIndex: current - 1) else { fatalError() }
         outputCodes([
             .moveCursor(x: 0, y: newCurrentLine),
@@ -150,7 +150,7 @@ func moveDown<T>(viewState: ViewState<T>) {
         viewState.moveDown()
         viewState.scrollDown()
 
-        print("  ", viewState.choices[viewState.visibleLines.upperBound], separator: "")
+        print("  ", viewState.choices[viewState.visibleLines.upperBound].choice, separator: "")
 
         guard let newCurrentLine = viewState.line(forChoiceIndex: current + 1) else { fatalError() }
 
