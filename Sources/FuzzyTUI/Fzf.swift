@@ -197,7 +197,7 @@ enum Event<T: Selectable> {
 }
 
 @MainActor
-func runSelector<T: Selectable, E: Error>(
+public func runSelector<T: Selectable, E: Error>(
     choices: some AsyncSequence<T, E> & Sendable
 ) async throws -> [T] {
     let terminalSize = TerminalSize.current()
@@ -282,19 +282,6 @@ func runSelector<T: Selectable, E: Error>(
     }
 
     return []
-}
-
-@main
-@MainActor
-struct Fzf {
-    static func main() async throws {
-        let choices = AsyncStream(unfolding: {
-            try! await Task.sleep(for: .seconds(1))
-            return "line \(Date())"
-        })
-
-        _ = try await runSelector(choices: choices)
-    }
 }
 
 func debug(_ message: String, reset: Bool = false) {

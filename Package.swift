@@ -6,16 +6,24 @@ import PackageDescription
 let package = Package(
     name: "tui-fuzzy-finder",
     platforms: [.macOS(.v15)],
+    products: [
+        .executable(name: "sfzf", targets: ["CLI"]),
+        .library(name: "FuzzyTUI", targets: ["FuzzyTUI"]),
+    ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0")
     ],
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
-        .executableTarget(
-            name: "swiftfzf",
+        .target(
+            name: "FuzzyTUI",
             dependencies: [
                 .product(name: "AsyncAlgorithms", package: "swift-async-algorithms")
+            ]
+        ),
+        .executableTarget(
+            name: "CLI",
+            dependencies: [
+                .target(name: "FuzzyTUI")
             ]
         )
     ]
