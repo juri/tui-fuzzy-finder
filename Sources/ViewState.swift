@@ -15,9 +15,10 @@ final class ViewState<T: CustomStringConvertible & Sendable & Equatable> {
     private let outputStream: AsyncStream<Void>
 
     private(set) var choices: [FilteredChoiceItem<T>]
+    private(set) var editPosition: Int = 0
     private(set) var unfilteredChoices: [T]
     private(set) var visibleLines: ClosedRange<Int>
-    private(set) var editPosition: Int = 0
+
     private var _filter: String = ""
 
     init(
