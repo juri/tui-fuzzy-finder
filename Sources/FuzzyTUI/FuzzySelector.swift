@@ -49,37 +49,6 @@ func choiceMarker<T>(choiceItem: FilteredChoiceItem<T>, viewState: ViewState<T>)
     return selectionMarker
 }
 
-@MainActor
-func fillScreen<T>(
-    appearance: Appearance,
-    viewState: ViewState<T>
-) {
-    outputCode(.clearScreen)
-
-    let choices = viewState.choices.suffix(viewState.visibleLines.count)
-    guard let startLine = viewState.line(forChoiceIndex: viewState.visibleLines.lowerBound) else {
-        fatalError()
-    }
-    var codes = [ANSIControlCode]()
-    for (lineNumber, (index, choiceItem)) in zip(0..., zip(choices.indices, choices)) {
-        codes.append(.moveCursor(x: 0, y: startLine + lineNumber))
-        let scroller = scroller(appearance: appearance, viewState: viewState, choiceItem: choiceItem, index: index)
-        addScrollerCodes(into: &codes, scroller: scroller)
-        codes.append(.setGraphicsRendition([.reset]))
-        let textAttrs = textAttributes(
-            appearance: appearance,
-            viewState: viewState,
-            choiceItem: choiceItem,
-            index: index
-        )
-        codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
-        codes.append(.literal(String(describing: choiceItem.choice)))
-    }
-    codes.append(.moveBottom(viewState: viewState))
-    outputCodes(codes)
-    showFilter(viewState: viewState)
-}
-
 func setGraphicsModes(textAttributes: Set<Appearance.TextAttributes>) -> [SetGraphicsRendition] {
     textAttributes.map { attr in
         switch attr {
@@ -491,7 +460,6 @@ public func runSelector<T: Selectable, E: Error>(
     )
 
     debug("Visible lines: \(viewState.visibleLines)")
-    fillScreen(appearance: appearance, viewState: viewState)
 
     let keyReader = KeyReader(tty: tty)
     let keyEvents = keyReader.keys
