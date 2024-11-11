@@ -42,13 +42,6 @@ func withSavedCursorPosition<T>(_ body: () throws -> T) rethrows -> T {
     return try body()
 }
 
-@MainActor
-func choiceMarker<T>(choiceItem: FilteredChoiceItem<T>, viewState: ViewState<T>) -> String {
-    let isSelected = viewState.isSelected(choiceItem)
-    let selectionMarker = isSelected ? "+" : " "
-    return selectionMarker
-}
-
 func setGraphicsModes(textAttributes: Set<Appearance.TextAttributes>) -> [SetGraphicsRendition] {
     textAttributes.map { attr in
         switch attr {
