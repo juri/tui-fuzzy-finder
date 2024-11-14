@@ -21,9 +21,7 @@ public struct Appearance: Sendable {
             .background(backgroundColor),
             .foreground(textColor)
         ],
-        inactiveTextAttributes: [
-            .foreground(textColor)
-        ],
+        inactiveTextAttributes: [],
         selectedTextAttributes: [
             .foreground(textColor)
         ],
