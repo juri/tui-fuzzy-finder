@@ -43,7 +43,9 @@ final class KeyReader {
                             default: break
                             }
                         }
-                        guard let character = toCharacter(bytes: buffer[0..<bytesRead]) else { return nil }
+                        guard let character = toCharacter(bytes: buffer[0..<bytesRead]) else {
+                            return nil
+                        }
                         return .character(character)
                     }
                     callback(.success(key))

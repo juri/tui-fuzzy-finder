@@ -19,7 +19,8 @@ final class FuzzySelectorView<T: Selectable> {
 
 extension FuzzySelectorView {
     func moveDown() {
-        guard let current = self.viewState.current, current < self.viewState.choices.count - 1 else { return }
+        guard let current = self.viewState.current, current < self.viewState.choices.count - 1
+        else { return }
         guard let currentLine = self.viewState.line(forChoiceIndex: current) else {
             fatalError()
         }
@@ -30,10 +31,12 @@ extension FuzzySelectorView {
         do {
             // clean up previous line
             let oldItem = self.viewState.choices[current]
-            addScrollerCodes(into: &codes, scroller: self.scroller(
-                choiceItem: oldItem,
-                isActive: false
-            ))
+            addScrollerCodes(
+                into: &codes,
+                scroller: self.scroller(
+                    choiceItem: oldItem,
+                    isActive: false
+                ))
             codes.append(.setGraphicsRendition([.reset]))
             let textAttrs = self.textAttributes(
                 choiceItem: oldItem,
@@ -48,10 +51,12 @@ extension FuzzySelectorView {
             codes.append(.moveCursor(x: 0, y: currentLine + 1))
             self.viewState.moveDown()
             let newItem = self.viewState.choices[current + 1]
-            addScrollerCodes(into: &codes, scroller: self.scroller(
-                choiceItem: newItem,
-                isActive: true
-            ))
+            addScrollerCodes(
+                into: &codes,
+                scroller: self.scroller(
+                    choiceItem: newItem,
+                    isActive: true
+                ))
 
             codes.append(.setGraphicsRendition([.reset]))
             let textAttrs = self.textAttributes(
@@ -72,12 +77,15 @@ extension FuzzySelectorView {
             self.viewState.scrollDown()
 
             do {
-                let newBottommostItem = self.viewState.choices[self.viewState.visibleLines.upperBound]
+                let newBottommostItem = self.viewState.choices[
+                    self.viewState.visibleLines.upperBound]
                 codes.append(.clearLine)
-                addScrollerCodes(into: &codes, scroller: self.scroller(
-                    choiceItem: newBottommostItem,
-                    isActive: false
-                ))
+                addScrollerCodes(
+                    into: &codes,
+                    scroller: self.scroller(
+                        choiceItem: newBottommostItem,
+                        isActive: false
+                    ))
                 codes.append(.setGraphicsRendition([.reset]))
                 let textAttrs = self.textAttributes(
                     choiceItem: newBottommostItem,
@@ -87,16 +95,20 @@ extension FuzzySelectorView {
                 codes.append(.literal(String(describing: newBottommostItem.choice)))
             }
 
-            guard let newCurrentLine = self.viewState.line(forChoiceIndex: current + 1) else { fatalError() }
+            guard let newCurrentLine = self.viewState.line(forChoiceIndex: current + 1) else {
+                fatalError()
+            }
 
             codes.append(.moveCursor(x: 0, y: newCurrentLine))
 
             do {
                 let newChoiceItem = self.viewState.choices[current + 1]
-                addScrollerCodes(into: &codes, scroller: self.scroller(
-                    choiceItem: newChoiceItem,
-                    isActive: true
-                ))
+                addScrollerCodes(
+                    into: &codes,
+                    scroller: self.scroller(
+                        choiceItem: newChoiceItem,
+                        isActive: true
+                    ))
                 let textAttrs = self.textAttributes(
                     choiceItem: newChoiceItem,
                     isActive: true
@@ -122,10 +134,12 @@ extension FuzzySelectorView {
         do {
             // clean up previous line
             let oldItem = self.viewState.choices[current]
-            addScrollerCodes(into: &codes, scroller: self.scroller(
-                choiceItem: oldItem,
-                isActive: false
-            ))
+            addScrollerCodes(
+                into: &codes,
+                scroller: self.scroller(
+                    choiceItem: oldItem,
+                    isActive: false
+                ))
             codes.append(.setGraphicsRendition([.reset]))
             let textAttrs = self.textAttributes(
                 choiceItem: oldItem,
@@ -140,10 +154,12 @@ extension FuzzySelectorView {
             codes.append(.moveCursor(x: 0, y: currentLine - 1))
             self.viewState.moveUp()
             let newItem = self.viewState.choices[current - 1]
-            addScrollerCodes(into: &codes, scroller: self.scroller(
-                choiceItem: newItem,
-                isActive: true
-            ))
+            addScrollerCodes(
+                into: &codes,
+                scroller: self.scroller(
+                    choiceItem: newItem,
+                    isActive: true
+                ))
 
             codes.append(.setGraphicsRendition([.reset]))
             let textAttrs = self.textAttributes(
@@ -168,10 +184,12 @@ extension FuzzySelectorView {
 
                 codes.append(.clearLine)
 
-                addScrollerCodes(into: &codes, scroller: self.scroller(
-                    choiceItem: newTopmostItem,
-                    isActive: false
-                ))
+                addScrollerCodes(
+                    into: &codes,
+                    scroller: self.scroller(
+                        choiceItem: newTopmostItem,
+                        isActive: false
+                    ))
 
                 codes.append(.setGraphicsRendition([.reset]))
                 let textAttrs = self.textAttributes(
@@ -182,14 +200,18 @@ extension FuzzySelectorView {
                 codes.append(.literal(String(describing: newTopmostItem.choice)))
             }
 
-            guard let newCurrentLine = self.viewState.line(forChoiceIndex: current - 1) else { fatalError() }
+            guard let newCurrentLine = self.viewState.line(forChoiceIndex: current - 1) else {
+                fatalError()
+            }
             codes.append(.moveCursor(x: 0, y: newCurrentLine))
             do {
                 let newChoiceItem = self.viewState.choices[current - 1]
-                addScrollerCodes(into: &codes, scroller: self.scroller(
-                    choiceItem: newChoiceItem,
-                    isActive: true
-                ))
+                addScrollerCodes(
+                    into: &codes,
+                    scroller: self.scroller(
+                        choiceItem: newChoiceItem,
+                        isActive: true
+                    ))
                 let textAttrs = self.textAttributes(
                     choiceItem: newChoiceItem,
                     isActive: true
@@ -216,7 +238,10 @@ extension FuzzySelectorView {
         }
 
         let choices = self.viewState.choices[self.viewState.visibleLines]
-        guard let startLine = self.viewState.line(forChoiceIndex: self.viewState.visibleLines.lowerBound) else {
+        guard
+            let startLine = self.viewState.line(
+                forChoiceIndex: self.viewState.visibleLines.lowerBound)
+        else {
             fatalError()
         }
         for (lineNumber, (index, choiceItem)) in zip(0..., zip(choices.indices, choices)) {
@@ -251,7 +276,9 @@ extension FuzzySelectorView {
                 .moveBottom(viewState: viewState),
                 .moveCursorUp(n: 1),
                 .clearLine,
-                .literal("  \(status.numberOfVisibleChoices)/\(status.numberOfChoices) (\(status.numberOfSelectedItems))"),
+                .literal(
+                    "  \(status.numberOfVisibleChoices)/\(status.numberOfChoices) (\(status.numberOfSelectedItems))"
+                ),
             ])
         }
     }

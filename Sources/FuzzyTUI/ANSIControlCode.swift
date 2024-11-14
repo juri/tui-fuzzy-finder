@@ -29,7 +29,8 @@ enum ANSIControlCode {
         case let .scrollDown(n): return .init(rawValue: "[\(n)T")
         case let .scrollUp(n): return .init(rawValue: "[\(n)S")
         case let .setCursorHidden(hidden): return .init(rawValue: "[?25\(hidden ? "l" : "h")")
-        case let .setGraphicsRendition(sgr): return .init(rawValue: "[\(sgr.map(\.parameters).joined(separator: ";"))m")
+        case let .setGraphicsRendition(sgr):
+            return .init(rawValue: "[\(sgr.map(\.parameters).joined(separator: ";"))m")
         }
     }
 

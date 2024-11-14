@@ -15,11 +15,11 @@ public struct Appearance: Sendable {
     public static let `default` = Appearance(
         highlightedTextAttributes: [
             .background(backgroundColor),
-            .foreground(textColor)
+            .foreground(textColor),
         ],
         highlightedSelectedTextAttributes: [
             .background(backgroundColor),
-            .foreground(textColor)
+            .foreground(textColor),
         ],
         inactiveTextAttributes: [],
         selectedTextAttributes: [
@@ -34,7 +34,7 @@ public struct Appearance: Sendable {
                         .background(backgroundColor),
                         .foreground(.palette256(200)),
                     ]
-                ),
+                )
             ]
         ),
 
@@ -61,7 +61,7 @@ public struct Appearance: Sendable {
                 TextPart(
                     text: " ",
                     attributes: [
-                        .background(backgroundColor),
+                        .background(backgroundColor)
                     ]
                 ),
                 TextPart(
@@ -75,7 +75,7 @@ public struct Appearance: Sendable {
                 TextPart(
                     text: " ",
                     attributes: [
-                        .background(backgroundColor),
+                        .background(backgroundColor)
                     ]
                 ),
                 TextPart(
@@ -115,4 +115,3 @@ public extension Appearance {
         case underline
     }
 }
-

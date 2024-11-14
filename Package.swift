@@ -25,6 +25,6 @@ let package = Package(
             dependencies: [
                 .target(name: "FuzzyTUI")
             ]
-        )
+        ),
     ]
 )
