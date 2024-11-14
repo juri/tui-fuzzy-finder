@@ -4,6 +4,305 @@ import Foundation
 public typealias Selectable = CustomStringConvertible & Sendable & Equatable
 
 @MainActor
+final class FuzzySelectorView<T: Selectable> {
+    private let appearance: Appearance
+    private let viewState: ViewState<T>
+
+    init(
+        appearance: Appearance,
+        viewState: ViewState<T>
+    ) {
+        self.appearance = appearance
+        self.viewState = viewState
+    }
+}
+
+extension FuzzySelectorView {
+    func moveDown() {
+        guard let current = self.viewState.current, current < self.viewState.choices.count - 1 else { return }
+        guard let currentLine = self.viewState.line(forChoiceIndex: current) else {
+            fatalError()
+        }
+
+        var codes = [ANSIControlCode]()
+        codes.append(.moveCursor(x: 0, y: currentLine))
+
+        do {
+            // clean up previous line
+            let oldItem = self.viewState.choices[current]
+            addScrollerCodes(into: &codes, scroller: self.scroller(
+                choiceItem: oldItem,
+                isActive: false
+            ))
+            codes.append(.setGraphicsRendition([.reset]))
+            let textAttrs = self.textAttributes(
+                choiceItem: oldItem,
+                isActive: false
+            )
+            codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
+            codes.append(.literal(String(describing: oldItem.choice)))
+        }
+
+        if currentLine < self.viewState.height - 4 || !self.viewState.canScrollDown {
+            // we don't need to scroll or we can't scroll
+            codes.append(.moveCursor(x: 0, y: currentLine + 1))
+            self.viewState.moveDown()
+            let newItem = self.viewState.choices[current + 1]
+            addScrollerCodes(into: &codes, scroller: self.scroller(
+                choiceItem: newItem,
+                isActive: true
+            ))
+
+            codes.append(.setGraphicsRendition([.reset]))
+            let textAttrs = self.textAttributes(
+                choiceItem: newItem,
+                isActive: true
+            )
+            codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
+            codes.append(.literal(String(describing: newItem.choice)))
+
+            outputCode(.moveBottom(viewState: self.viewState))
+        } else {
+            codes.append(.moveCursor(x: 0, y: 0))
+            codes.append(.clearLine)
+            codes.append(.moveToLastLine(viewState: self.viewState))
+            codes.append(.scrollUp(1))
+
+            self.viewState.moveDown()
+            self.viewState.scrollDown()
+
+            do {
+                let newBottommostItem = self.viewState.choices[self.viewState.visibleLines.upperBound]
+                codes.append(.clearLine)
+                addScrollerCodes(into: &codes, scroller: self.scroller(
+                    choiceItem: newBottommostItem,
+                    isActive: false
+                ))
+                codes.append(.setGraphicsRendition([.reset]))
+                let textAttrs = self.textAttributes(
+                    choiceItem: newBottommostItem,
+                    isActive: false
+                )
+                codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
+                codes.append(.literal(String(describing: newBottommostItem.choice)))
+            }
+
+            guard let newCurrentLine = self.viewState.line(forChoiceIndex: current + 1) else { fatalError() }
+
+            codes.append(.moveCursor(x: 0, y: newCurrentLine))
+
+            do {
+                let newChoiceItem = self.viewState.choices[current + 1]
+                addScrollerCodes(into: &codes, scroller: self.scroller(
+                    choiceItem: newChoiceItem,
+                    isActive: true
+                ))
+                let textAttrs = self.textAttributes(
+                    choiceItem: newChoiceItem,
+                    isActive: true
+                )
+                codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
+                codes.append(.literal(String(describing: newChoiceItem.choice)))
+            }
+
+            codes.append(.moveBottom(viewState: self.viewState))
+        }
+        outputCodes(codes)
+    }
+
+    func moveUp() {
+        guard let current = self.viewState.current, current > 0 else { return }
+        guard let currentLine = self.viewState.line(forChoiceIndex: current) else {
+            debug("moveUp didn't receive line for current \(current)")
+            fatalError()
+        }
+        var codes = [ANSIControlCode]()
+        codes.append(.moveCursor(x: 0, y: currentLine))
+
+        do {
+            // clean up previous line
+            let oldItem = self.viewState.choices[current]
+            addScrollerCodes(into: &codes, scroller: self.scroller(
+                choiceItem: oldItem,
+                isActive: false
+            ))
+            codes.append(.setGraphicsRendition([.reset]))
+            let textAttrs = self.textAttributes(
+                choiceItem: oldItem,
+                isActive: false
+            )
+            codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
+            codes.append(.literal(String(describing: oldItem.choice)))
+        }
+
+        if currentLine > 4 || !self.viewState.canScrollUp {
+            // we don't need to scroll or we can't scroll
+            codes.append(.moveCursor(x: 0, y: currentLine - 1))
+            self.viewState.moveUp()
+            let newItem = self.viewState.choices[current - 1]
+            addScrollerCodes(into: &codes, scroller: self.scroller(
+                choiceItem: newItem,
+                isActive: true
+            ))
+
+            codes.append(.setGraphicsRendition([.reset]))
+            let textAttrs = self.textAttributes(
+                choiceItem: newItem,
+                isActive: true
+            )
+            codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
+            codes.append(.literal(String(describing: newItem.choice)))
+
+            codes.append(.moveCursor(x: 0, y: self.viewState.height))
+        } else {
+            codes.append(.moveToLastLine(viewState: self.viewState))
+            codes.append(.clearLine)
+            codes.append(.moveCursor(x: 0, y: 0))
+            codes.append(.insertLines(1))
+
+            self.viewState.moveUp()
+            self.viewState.scrollUp()
+
+            do {
+                let newTopmostItem = self.viewState.choices[self.viewState.visibleLines.lowerBound]
+
+                codes.append(.clearLine)
+
+                addScrollerCodes(into: &codes, scroller: self.scroller(
+                    choiceItem: newTopmostItem,
+                    isActive: false
+                ))
+
+                codes.append(.setGraphicsRendition([.reset]))
+                let textAttrs = self.textAttributes(
+                    choiceItem: newTopmostItem,
+                    isActive: false
+                )
+                codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
+                codes.append(.literal(String(describing: newTopmostItem.choice)))
+            }
+
+            guard let newCurrentLine = self.viewState.line(forChoiceIndex: current - 1) else { fatalError() }
+            codes.append(.moveCursor(x: 0, y: newCurrentLine))
+            do {
+                let newChoiceItem = self.viewState.choices[current - 1]
+                addScrollerCodes(into: &codes, scroller: self.scroller(
+                    choiceItem: newChoiceItem,
+                    isActive: true
+                ))
+                let textAttrs = self.textAttributes(
+                    choiceItem: newChoiceItem,
+                    isActive: true
+                )
+                codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
+                codes.append(.literal(String(describing: newChoiceItem.choice)))
+            }
+
+            codes.append(.moveCursor(x: 0, y: self.viewState.height))
+            codes.append(.clearLine)
+        }
+        outputCodes(codes)
+    }
+
+    func redrawChoices() {
+        var codes = [ANSIControlCode]()
+        codes.append(.moveCursor(x: 0, y: 0))
+        codes.append(.clearLine)
+
+        for _ in 0..<self.viewState.height - 2 {
+            codes.append(.moveCursorDown(n: 1))
+            codes.append(.clearLine)
+        }
+
+        let choices = viewState.choices.suffix(self.viewState.visibleLines.count)
+        guard let startLine = viewState.line(forChoiceIndex: self.viewState.visibleLines.lowerBound) else {
+            fatalError()
+        }
+        for (lineNumber, (index, choiceItem)) in zip(0..., zip(choices.indices, choices)) {
+            codes.append(.moveCursor(x: 0, y: startLine + lineNumber))
+
+            let scroller = self.scroller(choiceItem: choiceItem, index: index)
+            addScrollerCodes(into: &codes, scroller: scroller)
+            codes.append(.setGraphicsRendition([.reset]))
+            let textAttrs = self.textAttributes(
+                choiceItem: choiceItem,
+                index: index
+            )
+            codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
+            codes.append(.literal(String(describing: choiceItem.choice)))
+        }
+        outputCodes(codes)
+    }
+
+    func showFilter() {
+        outputCodes([
+            .moveBottom(viewState: viewState),
+            .clearLine,
+            .literal(viewState.filter),
+            .moveCursorToColumn(n: viewState.editPosition + 1),
+        ])
+    }
+
+    func showStatus() {
+        let status = viewState.status
+        withSavedCursorPosition {
+            outputCodes([
+                .moveBottom(viewState: viewState),
+                .moveCursorUp(n: 1),
+                .clearLine,
+                .literal("  \(status.numberOfVisibleChoices)/\(status.numberOfChoices) (\(status.numberOfSelectedItems))"),
+            ])
+        }
+    }
+}
+
+private extension FuzzySelectorView {
+    func scroller(
+        choiceItem: FilteredChoiceItem<T>,
+        index: Int
+    ) -> Appearance.Scroller {
+        self.scroller(
+            choiceItem: choiceItem,
+            isActive: index == viewState.current
+        )
+    }
+
+    func scroller(
+        choiceItem: FilteredChoiceItem<T>,
+        isActive: Bool
+    ) -> Appearance.Scroller {
+        switch (isActive, self.viewState.isSelected(choiceItem)) {
+        case (false, false): return self.appearance.inactiveScroller
+        case (false, true): return self.appearance.selectedScroller
+        case (true, false): return self.appearance.highlightedScroller
+        case (true, true): return self.appearance.highlightedSelectedScroller
+        }
+    }
+
+    func textAttributes(
+        choiceItem: FilteredChoiceItem<T>,
+        index: Int
+    ) -> Set<Appearance.TextAttributes> {
+        textAttributes(
+            choiceItem: choiceItem,
+            isActive: index == viewState.current
+        )
+    }
+
+    func textAttributes(
+        choiceItem: FilteredChoiceItem<T>,
+        isActive: Bool
+    ) -> Set<Appearance.TextAttributes> {
+        switch (isActive, self.viewState.isSelected(choiceItem)) {
+        case (false, false): return self.appearance.inactiveTextAttributes
+        case (false, true): return self.appearance.selectedTextAttributes
+        case (true, false): return self.appearance.highlightedTextAttributes
+        case (true, true): return self.appearance.highlightedTextAttributes
+        }
+    }
+}
+
+@MainActor
 func write(_ strings: [String]) {
     for string in strings {
         try! FileHandle.standardOutput.write(contentsOf: Data(string.utf8))
@@ -71,358 +370,12 @@ func setGraphicsModes(textAttributes: Set<Appearance.TextAttributes>) -> [SetGra
     }
 }
 
-@MainActor
-func scroller<T>(
-    appearance: Appearance,
-    viewState: ViewState<T>,
-    choiceItem: FilteredChoiceItem<T>,
-    index: Int
-) -> Appearance.Scroller {
-    scroller(
-        appearance: appearance,
-        viewState: viewState,
-        choiceItem: choiceItem,
-        isActive: index == viewState.current
-    )
-}
-
-@MainActor
-func scroller<T>(
-    appearance: Appearance,
-    viewState: ViewState<T>,
-    choiceItem: FilteredChoiceItem<T>,
-    isActive: Bool
-) -> Appearance.Scroller {
-    switch (isActive, viewState.isSelected(choiceItem)) {
-    case (false, false): return appearance.inactiveScroller
-    case (false, true): return appearance.selectedScroller
-    case (true, false): return appearance.highlightedScroller
-    case (true, true): return appearance.highlightedSelectedScroller
-    }
-}
-
-@MainActor
-func textAttributes<T>(
-    appearance: Appearance,
-    viewState: ViewState<T>,
-    choiceItem: FilteredChoiceItem<T>,
-    index: Int
-) -> Set<Appearance.TextAttributes> {
-    textAttributes(
-        appearance: appearance,
-        viewState: viewState,
-        choiceItem: choiceItem,
-        isActive: index == viewState.current
-    )
-}
-
-@MainActor
-func textAttributes<T>(
-    appearance: Appearance,
-    viewState: ViewState<T>,
-    choiceItem: FilteredChoiceItem<T>,
-    isActive: Bool
-) -> Set<Appearance.TextAttributes> {
-    switch (isActive, viewState.isSelected(choiceItem)) {
-    case (false, false): return appearance.inactiveTextAttributes
-    case (false, true): return appearance.selectedTextAttributes
-    case (true, false): return appearance.highlightedTextAttributes
-    case (true, true): return appearance.highlightedTextAttributes
-    }
-}
-
-@MainActor
-func redrawChoices<T>(
-    appearance: Appearance,
-    viewState: ViewState<T>
-) {
-    var codes = [ANSIControlCode]()
-    codes.append(.moveCursor(x: 0, y: 0))
-    codes.append(.clearLine)
-
-    for _ in 0..<viewState.height - 2 {
-        codes.append(.moveCursorDown(n: 1))
-        codes.append(.clearLine)
-    }
-
-    let choices = viewState.choices.suffix(viewState.visibleLines.count)
-    guard let startLine = viewState.line(forChoiceIndex: viewState.visibleLines.lowerBound) else {
-        fatalError()
-    }
-    for (lineNumber, (index, choiceItem)) in zip(0..., zip(choices.indices, choices)) {
-        codes.append(.moveCursor(x: 0, y: startLine + lineNumber))
-
-        let scroller = scroller(appearance: appearance, viewState: viewState, choiceItem: choiceItem, index: index)
-        addScrollerCodes(into: &codes, scroller: scroller)
-        codes.append(.setGraphicsRendition([.reset]))
-        let textAttrs = textAttributes(
-            appearance: appearance,
-            viewState: viewState,
-            choiceItem: choiceItem,
-            index: index
-        )
-        codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
-        codes.append(.literal(String(describing: choiceItem.choice)))
-    }
-    outputCodes(codes)
-}
-
 func addScrollerCodes(into codes: inout [ANSIControlCode], scroller: Appearance.Scroller) {
     for textItem in scroller.text {
         let sgr = setGraphicsModes(textAttributes: textItem.attributes)
         codes.append(.setGraphicsRendition([.reset]))
         codes.append(.setGraphicsRendition(sgr))
         codes.append(.literal(textItem.text))
-    }
-}
-
-@MainActor
-func moveUp<T>(
-    appearance: Appearance,
-    viewState: ViewState<T>
-) {
-    guard let current = viewState.current, current > 0 else { return }
-    guard let currentLine = viewState.line(forChoiceIndex: current) else {
-        debug("moveUp didn't receive line for current \(current)")
-        fatalError()
-    }
-    var codes = [ANSIControlCode]()
-    codes.append(.moveCursor(x: 0, y: currentLine))
-
-    do {
-        // clean up previous line
-        let oldItem = viewState.choices[current]
-        addScrollerCodes(into: &codes, scroller: scroller(
-            appearance: appearance,
-            viewState: viewState,
-            choiceItem: oldItem,
-            isActive: false
-        ))
-        codes.append(.setGraphicsRendition([.reset]))
-        let textAttrs = textAttributes(
-            appearance: appearance,
-            viewState: viewState,
-            choiceItem: oldItem,
-            isActive: false
-        )
-        codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
-        codes.append(.literal(String(describing: oldItem.choice)))
-    }
-
-    if currentLine > 4 || !viewState.canScrollUp {
-        // we don't need to scroll or we can't scroll
-        codes.append(.moveCursor(x: 0, y: currentLine - 1))
-        viewState.moveUp()
-        let newItem = viewState.choices[current - 1]
-        addScrollerCodes(into: &codes, scroller: scroller(
-            appearance: appearance,
-            viewState: viewState,
-            choiceItem: newItem,
-            isActive: true
-        ))
-
-        codes.append(.setGraphicsRendition([.reset]))
-        let textAttrs = textAttributes(
-            appearance: appearance,
-            viewState: viewState,
-            choiceItem: newItem,
-            isActive: true
-        )
-        codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
-        codes.append(.literal(String(describing: newItem.choice)))
-
-        codes.append(.moveCursor(x: 0, y: viewState.height))
-    } else {
-        codes.append(.moveToLastLine(viewState: viewState))
-        codes.append(.clearLine)
-        codes.append(.moveCursor(x: 0, y: 0))
-        codes.append(.insertLines(1))
-
-        viewState.moveUp()
-        viewState.scrollUp()
-
-        do {
-            let newTopmostItem = viewState.choices[viewState.visibleLines.lowerBound]
-
-            codes.append(.clearLine)
-
-            addScrollerCodes(into: &codes, scroller: scroller(
-                appearance: appearance,
-                viewState: viewState,
-                choiceItem: newTopmostItem,
-                isActive: false
-            ))
-
-            codes.append(.setGraphicsRendition([.reset]))
-            let textAttrs = textAttributes(
-                appearance: appearance,
-                viewState: viewState,
-                choiceItem: newTopmostItem,
-                isActive: false
-            )
-            codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
-            codes.append(.literal(String(describing: newTopmostItem.choice)))
-        }
-
-        guard let newCurrentLine = viewState.line(forChoiceIndex: current - 1) else { fatalError() }
-        codes.append(.moveCursor(x: 0, y: newCurrentLine))
-        do {
-            let newChoiceItem = viewState.choices[current - 1]
-            addScrollerCodes(into: &codes, scroller: scroller(
-                appearance: appearance,
-                viewState: viewState,
-                choiceItem: newChoiceItem,
-                isActive: true
-            ))
-            let textAttrs = textAttributes(
-                appearance: appearance,
-                viewState: viewState,
-                choiceItem: newChoiceItem,
-                isActive: true
-            )
-            codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
-            codes.append(.literal(String(describing: newChoiceItem.choice)))
-        }
-
-        codes.append(.moveCursor(x: 0, y: viewState.height))
-        codes.append(.clearLine)
-    }
-    outputCodes(codes)
-}
-
-@MainActor
-func moveDown<T>(
-    appearance: Appearance,
-    viewState: ViewState<T>
-) {
-    guard let current = viewState.current, current < viewState.choices.count - 1 else { return }
-    guard let currentLine = viewState.line(forChoiceIndex: current) else {
-        fatalError()
-    }
-
-    var codes = [ANSIControlCode]()
-    codes.append(.moveCursor(x: 0, y: currentLine))
-
-    do {
-        // clean up previous line
-        let oldItem = viewState.choices[current]
-        addScrollerCodes(into: &codes, scroller: scroller(
-            appearance: appearance,
-            viewState: viewState,
-            choiceItem: oldItem,
-            isActive: false
-        ))
-        codes.append(.setGraphicsRendition([.reset]))
-        let textAttrs = textAttributes(
-            appearance: appearance,
-            viewState: viewState,
-            choiceItem: oldItem,
-            isActive: false
-        )
-        codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
-        codes.append(.literal(String(describing: oldItem.choice)))
-    }
-
-
-    if currentLine < viewState.height - 4 || !viewState.canScrollDown {
-        // we don't need to scroll or we can't scroll
-        codes.append(.moveCursor(x: 0, y: currentLine + 1))
-        viewState.moveDown()
-        let newItem = viewState.choices[current + 1]
-        addScrollerCodes(into: &codes, scroller: scroller(
-            appearance: appearance,
-            viewState: viewState,
-            choiceItem: newItem,
-            isActive: true
-        ))
-
-        codes.append(.setGraphicsRendition([.reset]))
-        let textAttrs = textAttributes(
-            appearance: appearance,
-            viewState: viewState,
-            choiceItem: newItem,
-            isActive: true
-        )
-        codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
-        codes.append(.literal(String(describing: newItem.choice)))
-
-        outputCode(.moveBottom(viewState: viewState))
-    } else {
-        codes.append(.moveCursor(x: 0, y: 0))
-        codes.append(.clearLine)
-        codes.append(.moveToLastLine(viewState: viewState))
-        codes.append(.scrollUp(1))
-
-        viewState.moveDown()
-        viewState.scrollDown()
-
-        do {
-            let newBottommostItem = viewState.choices[viewState.visibleLines.upperBound]
-            codes.append(.clearLine)
-            addScrollerCodes(into: &codes, scroller: scroller(
-                appearance: appearance,
-                viewState: viewState,
-                choiceItem: newBottommostItem,
-                isActive: false
-            ))
-            codes.append(.setGraphicsRendition([.reset]))
-            let textAttrs = textAttributes(
-                appearance: appearance,
-                viewState: viewState,
-                choiceItem: newBottommostItem,
-                isActive: false
-            )
-            codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
-            codes.append(.literal(String(describing: newBottommostItem.choice)))
-        }
-
-        guard let newCurrentLine = viewState.line(forChoiceIndex: current + 1) else { fatalError() }
-
-        codes.append(.moveCursor(x: 0, y: newCurrentLine))
-
-        do {
-            let newChoiceItem = viewState.choices[current + 1]
-            addScrollerCodes(into: &codes, scroller: scroller(
-                appearance: appearance,
-                viewState: viewState,
-                choiceItem: newChoiceItem,
-                isActive: true
-            ))
-            let textAttrs = textAttributes(
-                appearance: appearance,
-                viewState: viewState,
-                choiceItem: newChoiceItem,
-                isActive: true
-            )
-            codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
-            codes.append(.literal(String(describing: newChoiceItem.choice)))
-        }
-
-        codes.append(.moveBottom(viewState: viewState))
-    }
-    outputCodes(codes)
-}
-
-@MainActor
-func showFilter<T>(viewState: ViewState<T>) {
-    outputCodes([
-        .moveBottom(viewState: viewState),
-        .clearLine,
-        .literal(viewState.filter),
-        .moveCursorToColumn(n: viewState.editPosition + 1),
-    ])
-}
-
-@MainActor
-func showStatus<T>(viewState: ViewState<T>) {
-    let status = viewState.status
-    withSavedCursorPosition {
-        outputCodes([
-            .moveBottom(viewState: viewState),
-            .moveCursorUp(n: 1),
-            .clearLine,
-            .literal("  \(status.numberOfVisibleChoices)/\(status.numberOfChoices) (\(status.numberOfSelectedItems))"),
-        ])
     }
 }
 
@@ -466,77 +419,78 @@ public func runSelector<T: Selectable, E: Error>(
         .map { Event<T>.viewStateChanged }
 
     let choiceEvents = choices.map { choice -> Event<T> in .choice(choice) }
+    let view = FuzzySelectorView(appearance: appearance, viewState: viewState)
 
     eventLoop: for try await event in merge(keyEvents, choiceEvents, viewStateUpdateEvents) {
         debug("got event: \(event)")
         switch event {
         case .key(.backspace):
             viewState.editFilter(.backspace)
-            showFilter(viewState: viewState)
-            showStatus(viewState: viewState)
+            view.showFilter()
+            view.showStatus()
         case let .key(.character(character)):
             viewState.editFilter(.insert(character))
-            showFilter(viewState: viewState)
-            showStatus(viewState: viewState)
+            view.showFilter()
+            view.showStatus()
         case .key(.delete):
             viewState.editFilter(.delete)
-            showFilter(viewState: viewState)
-            showStatus(viewState: viewState)
+            view.showFilter()
+            view.showStatus()
         case .key(.deleteToEnd):
             viewState.editFilter(.deleteToEnd)
-            showFilter(viewState: viewState)
-            showStatus(viewState: viewState)
+            view.showFilter()
+            view.showStatus()
         case .key(.deleteToStart):
             viewState.editFilter(.deleteToStart)
-            showFilter(viewState: viewState)
-            showStatus(viewState: viewState)
+            view.showFilter()
+            view.showStatus()
         case .key(.down):
             withSavedCursorPosition {
-                moveDown(appearance: appearance, viewState: viewState)
+                view.moveDown()
             }
-            showFilter(viewState: viewState)
-            showStatus(viewState: viewState)
+            view.showFilter()
+            view.showStatus()
         case .key(.moveToEnd):
             viewState.editFilter(.moveToEnd)
-            showFilter(viewState: viewState)
+            view.showFilter()
         case .key(.moveToStart):
             viewState.editFilter(.moveToStart)
-            showFilter(viewState: viewState)
+            view.showFilter()
         case .key(.tab):
             viewState.toggleCurrentSelection()
             withSavedCursorPosition {
-                redrawChoices(appearance: appearance, viewState: viewState)
+                view.redrawChoices()
             }
-            showStatus(viewState: viewState)
+            view.showStatus()
         case .key(.transpose):
             viewState.editFilter(.transpose)
-            showFilter(viewState: viewState)
-            showStatus(viewState: viewState)
+            view.showFilter()
+            view.showStatus()
         case .key(.up):
             withSavedCursorPosition {
-                moveUp(appearance: appearance, viewState: viewState)
+                view.moveUp()
             }
-            showFilter(viewState: viewState)
-            showStatus(viewState: viewState)
+            view.showFilter()
+            view.showStatus()
         case .key(.terminate): break eventLoop
         case .key(nil): break
         case let .choice(choice):
             viewState.addChoice(choice)
             withSavedCursorPosition {
-                redrawChoices(appearance: appearance, viewState: viewState)
+                view.redrawChoices()
             }
-            showStatus(viewState: viewState)
+            view.showStatus()
         case .viewStateChanged:
             withSavedCursorPosition {
-                redrawChoices(appearance: appearance, viewState: viewState)
+                view.redrawChoices()
             }
-            showStatus(viewState: viewState)
+            view.showStatus()
         case .key(.some(.left)):
             viewState.editFilter(.left)
-            showFilter(viewState: viewState)
+            view.showFilter()
         case .key(.some(.right)):
             viewState.editFilter(.right)
-            showFilter(viewState: viewState)
+            view.showFilter()
         }
     }
 
