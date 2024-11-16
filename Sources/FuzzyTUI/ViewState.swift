@@ -18,11 +18,12 @@ final class ViewState<T: Selectable> {
     init(
         choices: [T],
         height: Int,
+        matchMode: MatchMode,
         maxWidth: Int
     ) {
         self.choices = choices.enumerated().map(FilteredChoiceItem.init(index:choice:))
         self.unfilteredChoices = choices
-        self.choiceFilter = ChoiceFilter()
+        self.choiceFilter = ChoiceFilter(matchMode: matchMode)
         self.current = choices.isEmpty ? nil : choices.count - 1
         self.height = height
         self.visibleLines = max(choices.count - height + 2, 0)...max(choices.count - 1, 0)
@@ -236,17 +237,21 @@ private actor ChoiceFilter<T: Selectable> {
     private typealias OutputStream = AsyncStream<[FilteredChoiceItem<T>]>
 
     private let inputContinuation: InputStream.Continuation
+    private let matchMode: MatchMode
     private let outputContinuation: OutputStream.Continuation
 
     private let outputStream: OutputStream
 
-    init() {
+    init(
+        matchMode: MatchMode
+    ) {
         let (inputStream, inputContinuation) = InputStream.makeStream(
             bufferingPolicy: .bufferingNewest(1))
         let (outputStream, outputContinuation) = OutputStream.makeStream(
             bufferingPolicy: .bufferingNewest(1))
 
         self.inputContinuation = inputContinuation
+        self.matchMode = matchMode
         self.outputContinuation = outputContinuation
 
         self.outputStream = outputStream
@@ -275,11 +280,37 @@ extension ChoiceFilter {
         guard !job.filter.isEmpty else {
             return job.choices.enumerated().map(FilteredChoiceItem.init(index:choice:))
         }
+
+        let caseSensitive: Bool
+        switch self.matchMode {
+        case .caseSensitive: caseSensitive = true
+        case .caseInsensitive: caseSensitive = false
+        case .caseSensitiveIfFilterContainsUppercase: caseSensitive = job.filter.contains(where: { $0.isUppercase })
+        }
+
         let filtered = job.choices.enumerated().filter {
-            $1.description.contains(job.filter)
+            isMatch($1.description, filter: job.filter, caseSensitive: caseSensitive)
         }.map(FilteredChoiceItem.init(index:choice:))
         return filtered
     }
+}
+
+func isMatch(_ string: String, filter: String, caseSensitive: Bool) -> Bool {
+    var characters = Array(caseSensitive ? string : string.lowercased())
+    let filterCharacters = Array(caseSensitive ? filter : filter.lowercased())
+    for filterCharacter in filterCharacters {
+        guard let index = characters.firstIndex(of: filterCharacter) else {
+            return false
+        }
+        characters.removeFirst(index + 1)
+    }
+    return true
+}
+
+public enum MatchMode: Sendable {
+    case caseSensitive
+    case caseInsensitive
+    case caseSensitiveIfFilterContainsUppercase
 }
 
 struct FilteredChoiceItem<T: Selectable>: Equatable {

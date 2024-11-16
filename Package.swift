@@ -20,6 +20,12 @@ let package = Package(
                 .product(name: "AsyncAlgorithms", package: "swift-async-algorithms")
             ]
         ),
+        .testTarget(
+            name: "FuzzyTUITests",
+            dependencies: [
+                .target(name: "FuzzyTUI")
+            ]
+        ),
         .executableTarget(
             name: "CLI",
             dependencies: [

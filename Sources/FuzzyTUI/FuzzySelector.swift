@@ -420,7 +420,8 @@ enum Event<T: Selectable> {
 @MainActor
 public func runSelector<T: Selectable, E: Error>(
     choices: some AsyncSequence<T, E> & Sendable,
-    appearance: Appearance? = nil
+    appearance: Appearance? = nil,
+    matchMode: MatchMode? = nil
 ) async throws -> [T] {
     let appearance = appearance ?? .default
     let terminalSize = TerminalSize.current()
@@ -434,6 +435,7 @@ public func runSelector<T: Selectable, E: Error>(
     let viewState = ViewState(
         choices: [T](),
         height: terminalSize.height,
+        matchMode: matchMode ?? .caseSensitiveIfFilterContainsUppercase,
         maxWidth: terminalSize.width - 3
     )
 
