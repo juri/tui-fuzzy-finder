@@ -227,7 +227,6 @@ extension FuzzySelectorView {
     }
 
     func redrawChoices() {
-        guard !self.viewState.visibleLines.isEmpty, !self.viewState.choices.isEmpty else { return }
         var codes = [ANSIControlCode]()
         codes.append(.moveCursor(x: 0, y: 0))
         codes.append(.clearLine)
@@ -235,6 +234,11 @@ extension FuzzySelectorView {
         for _ in 0..<self.viewState.height - 2 {
             codes.append(.moveCursorDown(n: 1))
             codes.append(.clearLine)
+        }
+
+        guard !self.viewState.visibleLines.isEmpty, !self.viewState.choices.isEmpty else {
+            outputCodes(codes)
+            return
         }
 
         let choices = self.viewState.choices[self.viewState.visibleLines]
