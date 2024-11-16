@@ -8,6 +8,7 @@ enum TerminalKey {
     case left
     case moveToEnd
     case moveToStart
+    case `return`
     case right
     case tab
     case terminate

@@ -490,6 +490,8 @@ public func runSelector<T: Selectable, E: Error>(
         case .key(.moveToStart):
             viewState.editFilter(.moveToStart)
             view.showFilter()
+        case .key(.return):
+            return viewState.unfilteredSelection.map { viewState.unfilteredChoices[$0] }
         case .key(.tab):
             viewState.toggleCurrentSelection()
             withSavedCursorPosition {

@@ -11,6 +11,9 @@ struct FuzzyCLI {
         //        _ = try await runSelector(choices: choices)
 
         let lines = (1...136).map { "line \($0)" }
-        _ = try await runSelector(choices: AsyncArray(array: lines))
+        let choices = try await runSelector(choices: AsyncArray(array: lines))
+        for choice in choices {
+            print(choice)
+        }
     }
 }
