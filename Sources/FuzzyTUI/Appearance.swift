@@ -22,9 +22,7 @@ public struct Appearance: Sendable {
             .foreground(textColor),
         ],
         inactiveTextAttributes: [],
-        selectedTextAttributes: [
-            .foreground(textColor)
-        ],
+        selectedTextAttributes: [],
 
         highlightedScroller: .init(
             text: [
