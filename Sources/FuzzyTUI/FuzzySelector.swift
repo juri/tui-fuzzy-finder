@@ -46,6 +46,7 @@ extension FuzzySelectorView {
             )
             codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
             codes.append(.literal(String(describing: oldItem.choice)))
+            codes.append(.setGraphicsRendition([.reset]))
         }
 
         if currentLine < self.viewState.size.height - 4 || !self.viewState.canScrollDown {
@@ -67,6 +68,7 @@ extension FuzzySelectorView {
             )
             codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
             codes.append(.literal(String(describing: newItem.choice)))
+            codes.append(.setGraphicsRendition([.reset]))
 
             outputCode(.moveBottom(viewState: self.viewState))
         } else {
@@ -95,6 +97,7 @@ extension FuzzySelectorView {
                 )
                 codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
                 codes.append(.literal(String(describing: newBottommostItem.choice)))
+                codes.append(.setGraphicsRendition([.reset]))
             }
 
             guard let newCurrentLine = self.viewState.line(forChoiceIndex: current + 1) else {
@@ -117,6 +120,7 @@ extension FuzzySelectorView {
                 )
                 codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
                 codes.append(.literal(String(describing: newChoiceItem.choice)))
+                codes.append(.setGraphicsRendition([.reset]))
             }
 
             codes.append(.moveBottom(viewState: self.viewState))
@@ -148,6 +152,7 @@ extension FuzzySelectorView {
             )
             codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
             codes.append(.literal(String(describing: oldItem.choice)))
+            codes.append(.setGraphicsRendition([.reset]))
         }
 
         if currentLine > 4 || !self.viewState.canScrollUp {
@@ -169,6 +174,7 @@ extension FuzzySelectorView {
             )
             codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
             codes.append(.literal(String(describing: newItem.choice)))
+            codes.append(.setGraphicsRendition([.reset]))
 
             codes.append(.moveCursor(x: 0, y: self.viewState.size.height))
         } else {
@@ -199,6 +205,7 @@ extension FuzzySelectorView {
                 )
                 codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
                 codes.append(.literal(String(describing: newTopmostItem.choice)))
+                codes.append(.setGraphicsRendition([.reset]))
             }
 
             guard let newCurrentLine = self.viewState.line(forChoiceIndex: current - 1) else {
@@ -219,6 +226,7 @@ extension FuzzySelectorView {
                 )
                 codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
                 codes.append(.literal(String(describing: newChoiceItem.choice)))
+                codes.append(.setGraphicsRendition([.reset]))
             }
 
             codes.append(.moveCursor(x: 0, y: self.viewState.size.height))
@@ -416,6 +424,7 @@ func addScrollerCodes(into codes: inout [ANSIControlCode], scroller: Appearance.
         codes.append(.setGraphicsRendition([.reset]))
         codes.append(.setGraphicsRendition(sgr))
         codes.append(.literal(textItem.text))
+        codes.append(.setGraphicsRendition([.reset]))
     }
 }
 
