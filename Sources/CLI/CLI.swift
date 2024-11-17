@@ -1,4 +1,5 @@
 import ArgumentParser
+import Foundation
 import FuzzyTUI
 
 @main
@@ -13,10 +14,10 @@ struct FuzzyCLI: AsyncParsableCommand {
     var multipleSelection: Bool = false
 
     mutating func run() async throws {
-        let lines = (1...136).map { "line \($0)" }
+        let lines = DirectoryLister(root: URL(string: ".")!).contents
         guard
             let selector = FuzzySelector(
-                choices: AsyncArray(array: lines),
+                choices: lines,
                 installSignalHandlers: self.installSignalHandlers,
                 multipleSelection: self.multipleSelection
             )
