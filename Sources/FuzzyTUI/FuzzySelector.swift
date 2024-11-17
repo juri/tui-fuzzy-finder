@@ -521,6 +521,7 @@ public func runSelector<T: Selectable, E: Error>(
                     view.redrawChoices()
                 }
                 view.showStatus()
+            case .key(.terminate): break eventLoop
             case .key(.transpose):
                 viewState.editFilter(.transpose)
                 view.showFilter()
@@ -531,7 +532,6 @@ public func runSelector<T: Selectable, E: Error>(
                 }
                 view.showFilter()
                 view.showStatus()
-            case .key(.terminate): break eventLoop
             case .key(nil): break
             case let .choice(choice):
                 viewState.addChoice(choice)
