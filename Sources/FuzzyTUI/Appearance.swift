@@ -12,6 +12,8 @@ public struct Appearance: Sendable {
     public var inactiveScroller: Scroller
     public var selectedScroller: Scroller
 
+    public var status: Status
+
     public static let `default` = Appearance(
         highlightedTextAttributes: [
             .background(backgroundColor),
@@ -84,6 +86,12 @@ public struct Appearance: Sendable {
                     ]
                 ),
             ]
+        ),
+        status: Status(
+            character: "─",
+            attributes: [
+                .foreground(backgroundColor)
+            ]
         )
     )
 }
@@ -98,6 +106,11 @@ public extension Appearance {
 
     struct Scroller: Sendable {
         public var text: [TextPart]
+    }
+
+    struct Status: Sendable {
+        public var character: Character
+        public var attributes: Set<TextAttributes>
     }
 
     struct TextPart: Sendable {

@@ -275,14 +275,21 @@ extension FuzzySelectorView {
 
     func showStatus() {
         let status = viewState.status
+        let lineStart = """
+              \(status.numberOfVisibleChoices)/\(status.numberOfChoices) (\(status.numberOfSelectedItems))\u{0020}
+            """
+        let remainingSpace = self.viewState.size.width - lineStart.count
+        let lineEnd = String(repeating: self.appearance.status.character, count: remainingSpace)
+
         withSavedCursorPosition {
             outputCodes([
                 .moveBottom(viewState: viewState),
                 .moveCursorUp(n: 1),
                 .clearLine,
-                .literal(
-                    "  \(status.numberOfVisibleChoices)/\(status.numberOfChoices) (\(status.numberOfSelectedItems))"
-                ),
+                .literal(lineStart),
+                .setGraphicsRendition(setGraphicsModes(textAttributes: self.appearance.status.attributes)),
+                .literal(lineEnd),
+                .setGraphicsRendition([.reset]),
             ])
         }
     }
