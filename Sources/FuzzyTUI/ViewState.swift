@@ -17,13 +17,13 @@ final class ViewState<T: Selectable> {
 
     init(
         choices: [T],
-        matchMode: MatchMode,
+        matchCaseSensitivity: MatchCaseSensitivity,
         maxWidth: Int,
         size: TerminalSize
     ) {
         self.choices = choices.enumerated().map(FilteredChoiceItem.init(index:choice:))
         self.unfilteredChoices = choices
-        self.choiceFilter = ChoiceFilter(matchMode: matchMode)
+        self.choiceFilter = ChoiceFilter(matchCaseSensitivity: matchCaseSensitivity)
         self.current = choices.isEmpty ? nil : choices.count - 1
         self.size = size
         self.visibleLines = max(choices.count - size.height + 2, 0)...max(choices.count - 1, 0)
@@ -237,13 +237,13 @@ private actor ChoiceFilter<T: Selectable> {
     private typealias OutputStream = AsyncStream<[FilteredChoiceItem<T>]>
 
     private let inputContinuation: InputStream.Continuation
-    private let matchMode: MatchMode
+    private let matchCaseSensitivity: MatchCaseSensitivity
     private let outputContinuation: OutputStream.Continuation
 
     private let outputStream: OutputStream
 
     init(
-        matchMode: MatchMode
+        matchCaseSensitivity: MatchCaseSensitivity
     ) {
         let (inputStream, inputContinuation) = InputStream.makeStream(
             bufferingPolicy: .bufferingNewest(1))
@@ -251,7 +251,7 @@ private actor ChoiceFilter<T: Selectable> {
             bufferingPolicy: .bufferingNewest(1))
 
         self.inputContinuation = inputContinuation
-        self.matchMode = matchMode
+        self.matchCaseSensitivity = matchCaseSensitivity
         self.outputContinuation = outputContinuation
 
         self.outputStream = outputStream
@@ -282,7 +282,7 @@ extension ChoiceFilter {
         }
 
         let caseSensitive: Bool
-        switch self.matchMode {
+        switch self.matchCaseSensitivity {
         case .caseSensitive: caseSensitive = true
         case .caseInsensitive: caseSensitive = false
         case .caseSensitiveIfFilterContainsUppercase: caseSensitive = job.filter.contains(where: { $0.isUppercase })
@@ -307,8 +307,8 @@ func isMatch(_ string: String, filter: String, caseSensitive: Bool) -> Bool {
     return true
 }
 
-/// `MatchMode` describes how case is handled while matching.
-public enum MatchMode: Sendable {
+/// `MatchCaseSensitivity` describes how case is handled while matching.
+public enum MatchCaseSensitivity: Sendable {
     /// Require matching case.
     case caseSensitive
 

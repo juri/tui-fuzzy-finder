@@ -442,7 +442,7 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
         choices: Seq,
         appearance: Appearance? = nil,
         installSignalHandlers: Bool = true,
-        matchMode: MatchMode? = nil,
+        matchCaseSensitivity: MatchCaseSensitivity? = nil,
         multipleSelection: Bool = true
     ) {
         let appearance = appearance ?? .default
@@ -454,7 +454,7 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
 
         let viewState = ViewState(
             choices: [T](),
-            matchMode: matchMode ?? .caseSensitiveIfFilterContainsUppercase,
+            matchCaseSensitivity: matchCaseSensitivity ?? .caseSensitiveIfFilterContainsUppercase,
             maxWidth: terminalSize.width - 3,
             size: terminalSize
         )
@@ -608,7 +608,7 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
     /// Continue running after suspension.
     ///
     /// If you've specified `installSignalHandlers` to
-    /// ``init(choices:appearance:installSignalHandlers:matchMode:multipleSelection:)`` as true,
+    /// ``init(choices:appearance:installSignalHandlers:matchCaseSensitivity:multipleSelection:)`` as true,
     /// you do not need to call this method. But if you want to handle SIGCONT in the program running
     /// the selector, call this method to resume the selector.
     public func continueAfterSuspension() throws {
