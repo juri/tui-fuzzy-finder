@@ -11,13 +11,18 @@ let package = Package(
         .library(name: "FuzzyTUI", targets: ["FuzzyTUI"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0")
+        .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0"),
+        .package(
+            url: "https://github.com/juri/swift-service-lifecycle.git",
+            revision: "90fa918c822fba4110945973357e166349d337d0"
+        ),
     ],
     targets: [
         .target(
             name: "FuzzyTUI",
             dependencies: [
-                .product(name: "AsyncAlgorithms", package: "swift-async-algorithms")
+                .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
+                .product(name: "UnixSignals", package: "swift-service-lifecycle"),
             ]
         ),
         .testTarget(

@@ -18,6 +18,7 @@ final class KeyReader {
                 let key = { () -> TerminalKey? in
                     var buffer = [UInt8](repeating: 0, count: 4)
                     let bytesRead = read(STDIN_FILENO, &buffer, 4)
+                    guard bytesRead > 0 else { return nil }
                     if bytesRead == 1 {
                         switch buffer[0] {
                         case 0x01: return .moveToStart
@@ -29,6 +30,7 @@ final class KeyReader {
                         case 0x0D: return .return
                         case 0x14: return .transpose
                         case 0x15: return .deleteToStart
+                        case 0x1A: return .suspend
                         case 0x7F: return .backspace
                         default: return .character(Character(.init(buffer[0])))
                         }

@@ -10,6 +10,7 @@ enum TerminalKey {
     case moveToStart
     case `return`
     case right
+    case suspend
     case tab
     case terminate
     case transpose

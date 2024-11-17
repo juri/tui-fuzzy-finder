@@ -1,21 +1,23 @@
 import Foundation
 
 @MainActor
-struct TTY {
+final class TTY {
     private let fileHandle: Int32
+    private var originalTermios: termios?
 
     init?(fileHandle: Int32) {
         guard isatty(fileHandle) == 1 else { return nil }
         self.fileHandle = fileHandle
     }
 
-    func withRawMode<T: Sendable>(body: () async throws -> T) async throws -> T {
+    func setRaw() throws {
         var originalTermios = termios()
 
         if tcgetattr(fileHandle, &originalTermios) == -1 {
             throw Failure.getAttributes
         }
 
+        self.originalTermios = originalTermios
         var raw = originalTermios
 
         raw.c_iflag &= ~tcflag_t(BRKINT | ICRNL | INPCK | ISTRIP | IXON)
@@ -28,17 +30,15 @@ struct TTY {
         }
 
         if tcsetattr(fileHandle, TCSAFLUSH, &raw) < 0 {
-            _ = tcsetattr(self.fileHandle, TCSAFLUSH, &originalTermios)
             throw Failure.setAttributes
         }
+    }
 
-        let value = try await body()
-
+    func unsetRaw() throws {
+        guard var originalTermios = self.originalTermios else { return }
         if tcsetattr(self.fileHandle, TCSAFLUSH, &originalTermios) < 0 {
             throw Failure.setAttributes
         }
-
-        return value
     }
 }
 
