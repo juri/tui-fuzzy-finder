@@ -4,7 +4,10 @@
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fjuri%2Fswift-tui-fuzzy-finder%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/juri/swift-tui-fuzzy-finder)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](code_of_conduct.md)
 
-`tui-fuzzy-finder` is a [fzf] style text UI fuzzy finder library in Swift.
+`tui-fuzzy-finder` is a [fzf] style text UI fuzzy finder library in Swift. It lists the contents
+of a asynchronous stream in the terminal, one item per line. The user can select one or multiple
+items from the list and use fuzzy search to filter the list, and when they press return,
+`tui-fuzzy-finder` returns the list of the selected items.
 
 ## Why
 
