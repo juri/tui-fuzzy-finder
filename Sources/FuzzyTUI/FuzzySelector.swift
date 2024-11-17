@@ -427,162 +427,181 @@ enum Event<T: Selectable> {
 }
 
 @MainActor
-public func runSelector<T: Selectable, E: Error>(
-    choices: some AsyncSequence<T, E> & Sendable,
-    appearance: Appearance? = nil,
-    matchMode: MatchMode? = nil,
-    multipleSelection: Bool = true
-) async throws -> [T] {
-    let appearance = appearance ?? .default
-    let terminalSize = TerminalSize.current()
-    debug("----------------------------------------", reset: true)
-    debug("Terminal height: \(terminalSize.height)")
-    guard let tty = TTY(fileHandle: STDIN_FILENO) else {
-        // TODO: error
-        return []
+public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncSequence<T, E> & Sendable {
+    private let choices: Seq
+    private let installSignalHandlers: Bool
+    private let multipleSelection: Bool
+    private let tty: TTY
+    private let view: FuzzySelectorView<T>
+    private let viewState: ViewState<T>
+
+    public init?(
+        choices: Seq,
+        appearance: Appearance? = nil,
+        installSignalHandlers: Bool = true,
+        matchMode: MatchMode? = nil,
+        multipleSelection: Bool = true
+    ) {
+        let appearance = appearance ?? .default
+        let terminalSize = TerminalSize.current()
+        guard let tty = TTY(fileHandle: STDIN_FILENO) else {
+            // TODO: error
+            return nil
+        }
+
+        let viewState = ViewState(
+            choices: [T](),
+            matchMode: matchMode ?? .caseSensitiveIfFilterContainsUppercase,
+            maxWidth: terminalSize.width - 3,
+            size: terminalSize
+        )
+
+        self.choices = choices
+        self.installSignalHandlers = installSignalHandlers
+        self.multipleSelection = multipleSelection
+        self.tty = tty
+        self.view = FuzzySelectorView(appearance: appearance, viewState: viewState)
+        self.viewState = viewState
     }
 
-    let viewState = ViewState(
-        choices: [T](),
-        matchMode: matchMode ?? .caseSensitiveIfFilterContainsUppercase,
-        maxWidth: terminalSize.width - 3,
-        size: terminalSize
-    )
+    public func run() async throws -> [T] {
+        let keyReader = KeyReader(tty: tty)
+        outputCodes([
+            .setCursorHidden(true),
+            .saveCursorPosition,
+            .saveScreen,
+            .enableAlternativeBuffer,
+        ])
 
-    debug("Visible lines: \(viewState.visibleLines)")
+        try self.tty.setRaw()
 
-    let keyReader = KeyReader(tty: tty)
-    outputCodes([
-        .setCursorHidden(true),
-        .saveCursorPosition,
-        .saveScreen,
-        .enableAlternativeBuffer,
-    ])
-
-    try tty.setRaw()
-
-    let keyEvents = keyReader.keys
-        .map { keyResult throws -> Event<T> in
-            switch keyResult {
-            case let .success(key): return Event.key(key)
-            case let .failure(error): throw error
-            }
-        }
-    let viewStateUpdateEvents = viewState.changed
-        .map { Event<T>.viewStateChanged }
-
-    let choiceEvents = choices.map { choice -> Event<T> in .choice(choice) }
-
-    let continueSignals = await UnixSignalsSequence(trapping: UnixSignal.sigcont)
-        .map { _ in Event<T>.continueSignal }
-
-    let view = FuzzySelectorView(appearance: appearance, viewState: viewState)
-
-    var selection = [T]()
-
-    eventLoop: for try await event in merge(keyEvents, choiceEvents, merge(viewStateUpdateEvents, continueSignals)) {
-        debug("got event: \(event)")
-        switch event {
-        case .continueSignal:
-            try tty.setRaw()
-            view.redrawChoices()
-            view.showFilter()
-            view.showStatus()
-        case .key(.backspace):
-            viewState.editFilter(.backspace)
-            view.showFilter()
-            view.showStatus()
-        case let .key(.character(character)):
-            viewState.editFilter(.insert(character))
-            view.showFilter()
-            view.showStatus()
-        case .key(.delete):
-            viewState.editFilter(.delete)
-            view.showFilter()
-            view.showStatus()
-        case .key(.deleteToEnd):
-            viewState.editFilter(.deleteToEnd)
-            view.showFilter()
-            view.showStatus()
-        case .key(.deleteToStart):
-            viewState.editFilter(.deleteToStart)
-            view.showFilter()
-            view.showStatus()
-        case .key(.down):
-            withSavedCursorPosition {
-                view.moveDown()
-            }
-            view.showFilter()
-            view.showStatus()
-        case .key(.moveToEnd):
-            viewState.editFilter(.moveToEnd)
-            view.showFilter()
-        case .key(.moveToStart):
-            viewState.editFilter(.moveToStart)
-            view.showFilter()
-        case .key(.return):
-            if multipleSelection {
-                selection = viewState.unfilteredSelection.map { viewState.unfilteredChoices[$0] }
-            } else if let current = viewState.current {
-                selection = [viewState.unfilteredChoices[current]]
-            }
-            break eventLoop
-        case .key(.suspend):
-            try tty.unsetRaw()
-            outputCodes([
-                .disableAlternativeBuffer,
-                .restoreScreen,
-            ])
-            let pid = ProcessInfo.processInfo.processIdentifier
-            let pgid = getpgid(pid)
-            let target = pgid * -1
-            kill(target, SIGTSTP)
-        case .key(.tab):
-            if multipleSelection {
-                viewState.toggleCurrentSelection()
-                withSavedCursorPosition {
-                    view.redrawChoices()
+        let keyEvents = keyReader.keys
+            .map { keyResult throws -> Event<T> in
+                switch keyResult {
+                case let .success(key): return Event.key(key)
+                case let .failure(error): throw error
                 }
-                view.showStatus()
             }
-        case .key(.terminate): break eventLoop
-        case .key(.transpose):
-            viewState.editFilter(.transpose)
-            view.showFilter()
-            view.showStatus()
-        case .key(.up):
-            withSavedCursorPosition {
-                view.moveUp()
+        let viewStateUpdateEvents = self.viewState.changed
+            .map { Event<T>.viewStateChanged }
+
+        let choiceEvents = choices.map { choice -> Event<T> in .choice(choice) }
+
+        let signals: [UnixSignal] = if self.installSignalHandlers { [.sigcont] } else { [] }
+        let signalsSequence = await UnixSignalsSequence(trapping: signals)
+            .map { _ in Event<T>.continueSignal }
+
+        var selection = [T]()
+        let events = merge(keyEvents, choiceEvents, merge(viewStateUpdateEvents, signalsSequence))
+
+        eventLoop: for try await event in events {
+            debug("got event: \(event)")
+            switch event {
+            case .continueSignal:
+                try self.continueAfterSuspension()
+            case .key(.backspace):
+                self.viewState.editFilter(.backspace)
+                self.view.showFilter()
+                self.view.showStatus()
+            case let .key(.character(character)):
+                self.viewState.editFilter(.insert(character))
+                self.view.showFilter()
+                self.view.showStatus()
+            case .key(.delete):
+                self.viewState.editFilter(.delete)
+                self.view.showFilter()
+                self.view.showStatus()
+            case .key(.deleteToEnd):
+                self.viewState.editFilter(.deleteToEnd)
+                self.view.showFilter()
+                self.view.showStatus()
+            case .key(.deleteToStart):
+                self.viewState.editFilter(.deleteToStart)
+                self.view.showFilter()
+                self.view.showStatus()
+            case .key(.down):
+                withSavedCursorPosition {
+                    self.view.moveDown()
+                }
+                self.view.showFilter()
+                self.view.showStatus()
+            case .key(.moveToEnd):
+                self.viewState.editFilter(.moveToEnd)
+                self.view.showFilter()
+            case .key(.moveToStart):
+                self.viewState.editFilter(.moveToStart)
+                self.view.showFilter()
+            case .key(.return):
+                if self.multipleSelection {
+                    selection = self.viewState.unfilteredSelection.map { self.viewState.unfilteredChoices[$0] }
+                } else if let current = self.viewState.current {
+                    selection = [self.viewState.unfilteredChoices[current]]
+                }
+                break eventLoop
+            case .key(.suspend):
+                try self.tty.unsetRaw()
+                outputCodes([
+                    .disableAlternativeBuffer,
+                    .restoreScreen,
+                ])
+                let pid = ProcessInfo.processInfo.processIdentifier
+                let pgid = getpgid(pid)
+                let target = pgid * -1
+                kill(target, SIGTSTP)
+            case .key(.tab):
+                if self.multipleSelection {
+                    self.viewState.toggleCurrentSelection()
+                    withSavedCursorPosition {
+                        self.view.redrawChoices()
+                    }
+                    self.view.showStatus()
+                }
+            case .key(.terminate): break eventLoop
+            case .key(.transpose):
+                self.viewState.editFilter(.transpose)
+                self.view.showFilter()
+                self.view.showStatus()
+            case .key(.up):
+                withSavedCursorPosition {
+                    self.view.moveUp()
+                }
+                self.view.showFilter()
+                self.view.showStatus()
+            case .key(nil): break
+            case let .choice(choice):
+                self.viewState.addChoice(choice)
+                withSavedCursorPosition {
+                    self.view.redrawChoices()
+                }
+                self.view.showStatus()
+            case .viewStateChanged:
+                withSavedCursorPosition {
+                    self.view.redrawChoices()
+                }
+                self.view.showStatus()
+            case .key(.some(.left)):
+                self.viewState.editFilter(.left)
+                self.view.showFilter()
+            case .key(.some(.right)):
+                self.viewState.editFilter(.right)
+                self.view.showFilter()
             }
-            view.showFilter()
-            view.showStatus()
-        case .key(nil): break
-        case let .choice(choice):
-            viewState.addChoice(choice)
-            withSavedCursorPosition {
-                view.redrawChoices()
-            }
-            view.showStatus()
-        case .viewStateChanged:
-            withSavedCursorPosition {
-                view.redrawChoices()
-            }
-            view.showStatus()
-        case .key(.some(.left)):
-            viewState.editFilter(.left)
-            view.showFilter()
-        case .key(.some(.right)):
-            viewState.editFilter(.right)
-            view.showFilter()
         }
+        try self.tty.unsetRaw()
+        outputCodes([
+            .disableAlternativeBuffer,
+            .restoreScreen,
+            .restoreCursorPosition,
+        ])
+        return selection
     }
-    try tty.unsetRaw()
-    outputCodes([
-        .disableAlternativeBuffer,
-        .restoreScreen,
-        .restoreCursorPosition,
-    ])
-    return selection
+
+    public func continueAfterSuspension() throws {
+        try self.tty.setRaw()
+        self.view.redrawChoices()
+        self.view.showFilter()
+        self.view.showStatus()
+    }
 }
 
 func debug(_ message: String, reset: Bool = false) {
