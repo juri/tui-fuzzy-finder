@@ -4,6 +4,8 @@ import FuzzyTUI
 @main
 @MainActor
 struct FuzzyCLI: AsyncParsableCommand {
+    nonisolated static let configuration = CommandConfiguration(commandName: "sfzf")
+
     @Flag(name: .long, inversion: .prefixedNo)
     var installSignalHandlers: Bool = true
 
