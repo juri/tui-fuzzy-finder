@@ -5,8 +5,9 @@
 //  Created by Juri Pakaste on 16.11.2024.
 //
 
-@testable import FuzzyTUI
 import Testing
+
+@testable import FuzzyTUI
 
 struct FuzzyTUITests {
     @Test(
