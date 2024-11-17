@@ -10,6 +10,10 @@ of a asynchronous stream in the terminal, one item per line. The user can select
 items from the list and use fuzzy search to filter the list, and when they press return,
 `tui-fuzzy-finder` returns the list of the selected items.
 
+## Demo
+
+[![asciicast](https://asciinema.org/a/690161.svg)](https://asciinema.org/a/690161)
+
 ## Why
 
 `fzf` is a fantastic tool, but if you're not into shell scripting, it can be be a drag. This library
