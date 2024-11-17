@@ -1,6 +1,8 @@
 enum ANSIControlCode {
     case clearLine
     case clearScreen
+    case disableAlternativeBuffer
+    case enableAlternativeBuffer
     case insertLines(Int)
     case literal(String)
     case moveCursor(x: Int, y: Int)
@@ -8,7 +10,9 @@ enum ANSIControlCode {
     case moveCursorToColumn(n: Int)
     case moveCursorUp(n: Int)
     case restoreCursorPosition
+    case restoreScreen
     case saveCursorPosition
+    case saveScreen
     case setGraphicsRendition([SetGraphicsRendition])
     case scrollDown(Int)
     case scrollUp(Int)
@@ -18,6 +22,8 @@ enum ANSIControlCode {
         switch self {
         case .clearLine: return .init(rawValue: "[2K")
         case .clearScreen: return .init(rawValue: "[2J")
+        case .disableAlternativeBuffer: return .init(rawValue: "[?1049l")
+        case .enableAlternativeBuffer: return .init(rawValue: "[?1049h")
         case let .insertLines(n): return .init(rawValue: "[\(n)L")
         case let .literal(str): return .init(rawValue: str, escape: false)
         case let .moveCursor(x: x, y: y): return .init(rawValue: "[\(y + 1);\(x + 1)H")
@@ -25,7 +31,9 @@ enum ANSIControlCode {
         case let .moveCursorToColumn(n: n): return .init(rawValue: "[\(n)G")
         case let .moveCursorUp(n: n): return .init(rawValue: "[\(n)A")
         case .restoreCursorPosition: return .init(rawValue: "8")
+        case .restoreScreen: return .init(rawValue: "[?47l")
         case .saveCursorPosition: return .init(rawValue: "7")
+        case .saveScreen: return .init(rawValue: "[?47h")
         case let .scrollDown(n): return .init(rawValue: "[\(n)T")
         case let .scrollUp(n): return .init(rawValue: "[\(n)S")
         case let .setCursorHidden(hidden): return .init(rawValue: "[?25\(hidden ? "l" : "h")")

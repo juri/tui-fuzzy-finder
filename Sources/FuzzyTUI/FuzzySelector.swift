@@ -442,6 +442,17 @@ public func runSelector<T: Selectable, E: Error>(
     debug("Visible lines: \(viewState.visibleLines)")
 
     let keyReader = KeyReader(tty: tty)
+    outputCodes([
+        .saveScreen,
+        .enableAlternativeBuffer,
+    ])
+
+    defer {
+        outputCodes([
+            .disableAlternativeBuffer,
+            .restoreScreen,
+        ])
+    }
 
     return try await tty.withRawMode {
         let keyEvents = keyReader.keys
@@ -536,7 +547,6 @@ public func runSelector<T: Selectable, E: Error>(
         }
 
         return selection
-
     }
 }
 
