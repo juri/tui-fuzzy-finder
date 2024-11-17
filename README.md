@@ -2,6 +2,7 @@
 
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fjuri%2Fswift-tui-fuzzy-finder%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/juri/swift-tui-fuzzy-finder)
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fjuri%2Fswift-tui-fuzzy-finder%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/juri/swift-tui-fuzzy-finder)
+![Swift build status](https://github.com/juri/swift-tui-fuzzy-finder/actions/workflows/build.yml/badge.svg)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](code_of_conduct.md)
 
 `tui-fuzzy-finder` is a [fzf] style text UI fuzzy finder library in Swift. It lists the contents
