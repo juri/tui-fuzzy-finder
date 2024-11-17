@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 struct TTY {
     private let fileHandle: Int32
 
@@ -8,16 +9,11 @@ struct TTY {
         self.fileHandle = fileHandle
     }
 
-    func withRawMode<T>(body: () throws -> T) throws -> T {
+    func withRawMode<T: Sendable>(body: () async throws -> T) async throws -> T {
         var originalTermios = termios()
 
         if tcgetattr(fileHandle, &originalTermios) == -1 {
             throw Failure.getAttributes
-        }
-
-        defer {
-            // TODO: This doesn't seem to do the trick? ctrl-z doesn't work after this
-            _ = tcsetattr(self.fileHandle, TCSAFLUSH, &originalTermios)
         }
 
         var raw = originalTermios
@@ -32,10 +28,17 @@ struct TTY {
         }
 
         if tcsetattr(fileHandle, TCSAFLUSH, &raw) < 0 {
+            _ = tcsetattr(self.fileHandle, TCSAFLUSH, &originalTermios)
             throw Failure.setAttributes
         }
 
-        return try body()
+        let value = try await body()
+
+        if tcsetattr(self.fileHandle, TCSAFLUSH, &originalTermios) < 0 {
+            throw Failure.setAttributes
+        }
+
+        return value
     }
 }
 
