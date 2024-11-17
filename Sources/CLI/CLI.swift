@@ -13,12 +13,16 @@ struct FuzzyCLI: AsyncParsableCommand {
     @Flag(name: [.customShort("m"), .customLong("multi")])
     var multipleSelection: Bool = false
 
+    @Option(name: [.customShort("C"), .customLong("case")])
+    var caseSensitivity: CaseSensitivity = .smart
+
     mutating func run() async throws {
         let lines = DirectoryLister(root: URL(string: ".")!).contents
         guard
             let selector = FuzzySelector(
                 choices: lines,
                 installSignalHandlers: self.installSignalHandlers,
+                matchCaseSensitivity: self.caseSensitivity.matchCaseSensitivity,
                 multipleSelection: self.multipleSelection
             )
         else {
@@ -28,6 +32,37 @@ struct FuzzyCLI: AsyncParsableCommand {
 
         for choice in choices {
             print(choice)
+        }
+    }
+}
+
+enum CaseSensitivity: Decodable {
+    case sensitive
+    case insensitive
+    case smart
+}
+
+extension CaseSensitivity: ExpressibleByArgument {
+    init?(argument: String) {
+        switch argument.lowercased() {
+        case "sensitive":
+            self = .sensitive
+        case "insensitive":
+            self = .insensitive
+        case "smart":
+            self = .smart
+        default:
+            return nil
+        }
+    }
+}
+
+extension CaseSensitivity {
+    var matchCaseSensitivity: MatchCaseSensitivity {
+        switch self {
+        case .sensitive: return .caseSensitive
+        case .insensitive: return .caseInsensitive
+        case .smart: return .caseSensitiveIfFilterContainsUppercase
         }
     }
 }
