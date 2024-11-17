@@ -569,6 +569,7 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
                 if self.multipleSelection {
                     self.viewState.toggleCurrentSelection()
                     withSavedCursorPosition {
+                        self.view.moveDown()
                         self.view.redrawChoices()
                     }
                     self.view.showStatus()
