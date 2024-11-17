@@ -43,11 +43,11 @@ enum ANSIControlCode {
     }
 
     static func moveBottom<T>(viewState: ViewState<T>) -> Self {
-        .moveCursor(x: 0, y: viewState.height - 1)
+        .moveCursor(x: 0, y: viewState.size.height - 1)
     }
 
     static func moveToLastLine<T>(viewState: ViewState<T>) -> Self {
-        .moveCursor(x: 0, y: viewState.height - 3)
+        .moveCursor(x: 0, y: viewState.size.height - 3)
     }
 }
 

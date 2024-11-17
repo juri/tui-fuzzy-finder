@@ -46,7 +46,7 @@ extension FuzzySelectorView {
             codes.append(.literal(String(describing: oldItem.choice)))
         }
 
-        if currentLine < self.viewState.height - 4 || !self.viewState.canScrollDown {
+        if currentLine < self.viewState.size.height - 4 || !self.viewState.canScrollDown {
             // we don't need to scroll or we can't scroll
             codes.append(.moveCursor(x: 0, y: currentLine + 1))
             self.viewState.moveDown()
@@ -169,7 +169,7 @@ extension FuzzySelectorView {
             codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
             codes.append(.literal(String(describing: newItem.choice)))
 
-            codes.append(.moveCursor(x: 0, y: self.viewState.height))
+            codes.append(.moveCursor(x: 0, y: self.viewState.size.height))
         } else {
             codes.append(.moveToLastLine(viewState: self.viewState))
             codes.append(.clearLine)
@@ -220,7 +220,7 @@ extension FuzzySelectorView {
                 codes.append(.literal(String(describing: newChoiceItem.choice)))
             }
 
-            codes.append(.moveCursor(x: 0, y: self.viewState.height))
+            codes.append(.moveCursor(x: 0, y: self.viewState.size.height))
             codes.append(.clearLine)
         }
         outputCodes(codes)
@@ -231,7 +231,7 @@ extension FuzzySelectorView {
         codes.append(.moveCursor(x: 0, y: 0))
         codes.append(.clearLine)
 
-        for _ in 0..<self.viewState.height - 2 {
+        for _ in 0..<self.viewState.size.height - 2 {
             codes.append(.moveCursorDown(n: 1))
             codes.append(.clearLine)
         }
@@ -434,9 +434,9 @@ public func runSelector<T: Selectable, E: Error>(
 
     let viewState = ViewState(
         choices: [T](),
-        height: terminalSize.height,
         matchMode: matchMode ?? .caseSensitiveIfFilterContainsUppercase,
-        maxWidth: terminalSize.width - 3
+        maxWidth: terminalSize.width - 3,
+        size: terminalSize
     )
 
     debug("Visible lines: \(viewState.visibleLines)")

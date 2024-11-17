@@ -1,6 +1,6 @@
 @MainActor
 final class ViewState<T: Selectable> {
-    let height: Int
+    let size: TerminalSize
 
     var current: Int?
 
@@ -17,16 +17,16 @@ final class ViewState<T: Selectable> {
 
     init(
         choices: [T],
-        height: Int,
         matchMode: MatchMode,
-        maxWidth: Int
+        maxWidth: Int,
+        size: TerminalSize
     ) {
         self.choices = choices.enumerated().map(FilteredChoiceItem.init(index:choice:))
         self.unfilteredChoices = choices
         self.choiceFilter = ChoiceFilter(matchMode: matchMode)
         self.current = choices.isEmpty ? nil : choices.count - 1
-        self.height = height
-        self.visibleLines = max(choices.count - height + 2, 0)...max(choices.count - 1, 0)
+        self.size = size
+        self.visibleLines = max(choices.count - size.height + 2, 0)...max(choices.count - 1, 0)
 
         let (outputStream, outputContinuation) = AsyncStream<Void>.makeStream(
             bufferingPolicy: .bufferingNewest(1))
@@ -35,7 +35,7 @@ final class ViewState<T: Selectable> {
         Task {
             for await filteredChoices in self.choiceFilter.output {
                 let visibleLines =
-                    max(filteredChoices.count - height + 2, 0)...max(filteredChoices.count - 1, 0)
+                    max(filteredChoices.count - size.height + 2, 0)...max(filteredChoices.count - 1, 0)
                 let visibleLinesChanged = visibleLines != self.visibleLines
                 self.visibleLines = visibleLines
 
@@ -169,7 +169,7 @@ final class ViewState<T: Selectable> {
         guard self.visibleLines.contains(index) else {
             return nil
         }
-        return max(0, (self.height - self.visibleLines.count)) + index
+        return max(0, (self.size.height - self.visibleLines.count)) + index
             - self.visibleLines.lowerBound - 2
     }
 
