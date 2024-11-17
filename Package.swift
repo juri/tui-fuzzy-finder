@@ -11,6 +11,7 @@ let package = Package(
         .library(name: "FuzzyTUI", targets: ["FuzzyTUI"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/apple/swift-argument-parser", from: "1.5.0"),
         .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0"),
         .package(
             url: "https://github.com/juri/swift-service-lifecycle.git",
@@ -34,7 +35,8 @@ let package = Package(
         .executableTarget(
             name: "CLI",
             dependencies: [
-                .target(name: "FuzzyTUI")
+                .product(name: "ArgumentParser", package: "swift-argument-parser"),
+                .target(name: "FuzzyTUI"),
             ]
         ),
     ]

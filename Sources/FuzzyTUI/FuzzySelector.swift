@@ -430,7 +430,8 @@ enum Event<T: Selectable> {
 public func runSelector<T: Selectable, E: Error>(
     choices: some AsyncSequence<T, E> & Sendable,
     appearance: Appearance? = nil,
-    matchMode: MatchMode? = nil
+    matchMode: MatchMode? = nil,
+    multipleSelection: Bool = true
 ) async throws -> [T] {
     let appearance = appearance ?? .default
     let terminalSize = TerminalSize.current()
@@ -520,7 +521,11 @@ public func runSelector<T: Selectable, E: Error>(
             viewState.editFilter(.moveToStart)
             view.showFilter()
         case .key(.return):
-            selection = viewState.unfilteredSelection.map { viewState.unfilteredChoices[$0] }
+            if multipleSelection {
+                selection = viewState.unfilteredSelection.map { viewState.unfilteredChoices[$0] }
+            } else if let current = viewState.current {
+                selection = [viewState.unfilteredChoices[current]]
+            }
             break eventLoop
         case .key(.suspend):
             try tty.unsetRaw()
@@ -533,11 +538,13 @@ public func runSelector<T: Selectable, E: Error>(
             let target = pgid * -1
             kill(target, SIGTSTP)
         case .key(.tab):
-            viewState.toggleCurrentSelection()
-            withSavedCursorPosition {
-                view.redrawChoices()
+            if multipleSelection {
+                viewState.toggleCurrentSelection()
+                withSavedCursorPosition {
+                    view.redrawChoices()
+                }
+                view.showStatus()
             }
-            view.showStatus()
         case .key(.terminate): break eventLoop
         case .key(.transpose):
             viewState.editFilter(.transpose)
