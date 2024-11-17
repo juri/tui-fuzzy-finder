@@ -452,16 +452,11 @@ public func runSelector<T: Selectable, E: Error>(
 
     let keyReader = KeyReader(tty: tty)
     outputCodes([
+        .setCursorHidden(true),
+        .saveCursorPosition,
         .saveScreen,
         .enableAlternativeBuffer,
     ])
-
-    defer {
-        outputCodes([
-            .disableAlternativeBuffer,
-            .restoreScreen,
-        ])
-    }
 
     try tty.setRaw()
 
@@ -575,6 +570,11 @@ public func runSelector<T: Selectable, E: Error>(
         }
     }
     try tty.unsetRaw()
+    outputCodes([
+        .disableAlternativeBuffer,
+        .restoreScreen,
+        .restoreCursorPosition,
+    ])
     return selection
 }
 
