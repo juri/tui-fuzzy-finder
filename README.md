@@ -18,6 +18,17 @@ in Swift.
 of `sfzf` is to make it easy to excercise the `tui-fuzzy-finder` features that are difficult to test
 automatically. It does not try to compete with `fzf`.
 
+## Command line usage
+
+Run `sfzf --help` to get information about command line arguments.
+
+While the program is running:
+
+- Move up and down with arrows
+- Edit the filter line with normal line-editing commands
+- Toggle selection with tab
+- Press return to exit and write the selected lines to stdout
+
 ## Goals
 
 - Sufficient coverage of `fzf` features.
