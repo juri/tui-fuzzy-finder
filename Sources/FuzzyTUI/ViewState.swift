@@ -307,9 +307,15 @@ func isMatch(_ string: String, filter: String, caseSensitive: Bool) -> Bool {
     return true
 }
 
+/// `MatchMode` describes how case is handled while matching.
 public enum MatchMode: Sendable {
+    /// Require matching case.
     case caseSensitive
+
+    /// Don't require matching case.
     case caseInsensitive
+
+    /// Require matching case if the match string contains uppercase letters.
     case caseSensitiveIfFilterContainsUppercase
 }
 

@@ -92,6 +92,7 @@ enum SetGraphicsRendition {
     }
 }
 
+/// `BasicPalette` contains the basic eight terminal colors.
 public enum BasicPalette: Int, Sendable {
     case black = 0
     case red = 1

@@ -1,3 +1,4 @@
+/// `AsyncArray` allows you to wrap an array in an `AsyncSequence`.
 public struct AsyncArray<Element>: AsyncSequence {
     public typealias Element = Element
 

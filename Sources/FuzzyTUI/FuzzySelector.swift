@@ -2,6 +2,7 @@ import AsyncAlgorithms
 import Foundation
 import UnixSignals
 
+/// The type used for selectable items.
 public typealias Selectable = CustomStringConvertible & Sendable & Equatable
 
 @MainActor
@@ -426,6 +427,7 @@ enum Event<T: Selectable> {
     case viewStateChanged
 }
 
+/// `FuzzySelector` is the entry point to use for displaying a selector.
 @MainActor
 public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncSequence<T, E> & Sendable {
     private let choices: Seq
@@ -435,6 +437,7 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
     private let view: FuzzySelectorView<T>
     private let viewState: ViewState<T>
 
+    /// Initialize a `FuzzySelector`.
     public init?(
         choices: Seq,
         appearance: Appearance? = nil,
@@ -464,6 +467,9 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
         self.viewState = viewState
     }
 
+    /// Run the selector.
+    ///
+    /// The `run` method consumes the `choices` sequence given in init and asynchronously returns the selected items.
     public func run() async throws -> [T] {
         let keyReader = KeyReader(tty: tty)
         outputCodes([
@@ -599,6 +605,12 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
         return selection
     }
 
+    /// Continue running after suspension.
+    ///
+    /// If you've specified `installSignalHandlers` to
+    /// ``init(choices:appearance:installSignalHandlers:matchMode:multipleSelection:)`` as true,
+    /// you do not need to call this method. But if you want to handle SIGCONT in the program running
+    /// the selector, call this method to resume the selector.
     public func continueAfterSuspension() throws {
         try self.tty.setRaw()
         self.view.redrawChoices()
