@@ -421,7 +421,7 @@ func addScrollerCodes(into codes: inout [ANSIControlCode], scroller: Appearance.
 
 enum Event<T: Selectable> {
     case key(TerminalKey?)
-    case choice(T)
+    case choice([T])
     case continueSignal
     case viewStateChanged
 }
@@ -485,7 +485,10 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
         let viewStateUpdateEvents = self.viewState.changed
             .map { Event<T>.viewStateChanged }
 
-        let choiceEvents = choices.map { choice -> Event<T> in .choice(choice) }
+        let choiceEvents =
+            choices
+            .chunked(by: .repeating(every: .milliseconds(100)))
+            .map { choices -> Event<T> in .choice(choices) }
 
         let signals: [UnixSignal] = if self.installSignalHandlers { [.sigcont] } else { [] }
         let signalsSequence = await UnixSignalsSequence(trapping: signals)
@@ -568,8 +571,8 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
                 self.view.showFilter()
                 self.view.showStatus()
             case .key(nil): break
-            case let .choice(choice):
-                self.viewState.addChoice(choice)
+            case let .choice(choices):
+                self.viewState.addChoices(choices)
                 withSavedCursorPosition {
                     self.view.redrawChoices()
                 }

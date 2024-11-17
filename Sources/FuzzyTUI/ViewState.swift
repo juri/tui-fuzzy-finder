@@ -62,8 +62,8 @@ final class ViewState<T: Selectable> {
         }
     }
 
-    func addChoice(_ choice: T) {
-        self.unfilteredChoices.append(choice)
+    func addChoices(_ choices: [T]) {
+        self.unfilteredChoices.append(contentsOf: choices)
         self.choiceFilter.addJob(.init(choices: self.unfilteredChoices, filter: self.filter))
     }
 
