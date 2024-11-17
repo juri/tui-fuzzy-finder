@@ -127,7 +127,6 @@ extension FuzzySelectorView {
     func moveUp() {
         guard let current = self.viewState.current, current > 0 else { return }
         guard let currentLine = self.viewState.line(forChoiceIndex: current) else {
-            debug("moveUp didn't receive line for current \(current)")
             fatalError()
         }
         var codes = [ANSIControlCode]()
@@ -504,7 +503,6 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
         let events = merge(keyEvents, choiceEvents, merge(viewStateUpdateEvents, signalsSequence))
 
         eventLoop: for try await event in events {
-            debug("got event: \(event)")
             switch event {
             case .continueSignal:
                 try self.continueAfterSuspension()
