@@ -20,6 +20,9 @@ automatically. It does not try to compete with `fzf`.
 
 ## Command line usage
 
+To build and install the executable run `swift build -c release`, then copy `.build/release/sfzf`
+somewhere on your path.
+
 Run `sfzf --help` to get information about command line arguments.
 
 While the program is running:
