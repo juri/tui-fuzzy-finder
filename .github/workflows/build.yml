@@ -9,13 +9,14 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     steps:
-      - name: Set up Swift
-        uses: swift-actions/setup-swift@v2
-        with:
-          swift-version: "6.0.0"
+      # setup-swift doesn't support Swift 6 so use the Swift included in macos-latest.
+      # - name: Set up Swift
+      #   uses: swift-actions/setup-swift@v2
+      #   with:
+      #     swift-version: "6.0.0"
 
       - name: Checkout
         uses: actions/checkout@v3
