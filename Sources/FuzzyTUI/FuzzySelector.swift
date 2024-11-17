@@ -485,6 +485,7 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
             .saveCursorPosition,
             .saveScreen,
             .enableAlternativeBuffer,
+            .clearScreen,
         ])
 
         try self.tty.setRaw()
