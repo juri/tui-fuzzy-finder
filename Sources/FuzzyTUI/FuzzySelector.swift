@@ -627,16 +627,3 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
         self.view.showStatus()
     }
 }
-
-func debug(_ message: String, reset: Bool = false) {
-    let fh = FileHandle(forUpdatingAtPath: "/tmp/swiftfzfdebug.log")!
-    if reset {
-        try! fh.truncate(atOffset: 0)
-    }
-    if message.isEmpty { return }
-
-    try! fh.seekToEnd()
-    try! fh.write(contentsOf: Data(message.utf8))
-    try! fh.write(contentsOf: Data("\n".utf8))
-    try! fh.close()
-}
