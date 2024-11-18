@@ -451,7 +451,8 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
         appearance: Appearance? = nil,
         installSignalHandlers: Bool = true,
         matchCaseSensitivity: MatchCaseSensitivity? = nil,
-        multipleSelection: Bool = true
+        multipleSelection: Bool = true,
+        reverse: Bool = true
     ) {
         let appearance = appearance ?? .default
         let terminalSize = TerminalSize.current()
@@ -464,6 +465,7 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
             choices: [T](),
             matchCaseSensitivity: matchCaseSensitivity ?? .caseSensitiveIfFilterContainsUppercase,
             maxWidth: terminalSize.width - 3,
+            reverse: reverse,
             size: terminalSize
         )
 

@@ -6,6 +6,7 @@ final class ViewState<T: Selectable> {
 
     private let choiceFilter: ChoiceFilter<T>
     private let outputStream: AsyncStream<Void>
+    private let reverse: Bool
 
     private(set) var choices: [FilteredChoiceItem<T>]
     private(set) var editPosition: Int = 0
@@ -19,12 +20,14 @@ final class ViewState<T: Selectable> {
         choices: [T],
         matchCaseSensitivity: MatchCaseSensitivity,
         maxWidth: Int,
+        reverse: Bool,
         size: TerminalSize
     ) {
         self.choices = choices.enumerated().map(FilteredChoiceItem.init(index:choice:))
         self.unfilteredChoices = choices
         self.choiceFilter = ChoiceFilter(matchCaseSensitivity: matchCaseSensitivity)
         self.current = choices.isEmpty ? nil : choices.count - 1
+        self.reverse = reverse
         self.size = size
         self.visibleLines = max(choices.count - size.height + 2, 0)...max(choices.count - 1, 0)
 
@@ -64,7 +67,7 @@ final class ViewState<T: Selectable> {
 
     func addChoices(_ choices: [T]) {
         self.unfilteredChoices.append(contentsOf: choices)
-        self.choiceFilter.addJob(.init(choices: self.unfilteredChoices, filter: self.filter))
+        self.choiceFilter.addJob(.init(choices: self.unfilteredChoices, filter: self.filter, reverse: self.reverse))
     }
 
     func editFilter(_ action: EditAction) {
@@ -127,7 +130,7 @@ final class ViewState<T: Selectable> {
         get { self._filter }
         set {
             self._filter = newValue
-            self.choiceFilter.addJob(.init(choices: self.unfilteredChoices, filter: newValue))
+            self.choiceFilter.addJob(.init(choices: self.unfilteredChoices, filter: newValue, reverse: self.reverse))
         }
     }
 
@@ -231,6 +234,7 @@ private actor ChoiceFilter<T: Selectable> {
     struct Job {
         var choices: [T]
         var filter: String
+        var reverse: Bool
     }
 
     private typealias InputStream = AsyncStream<Job>
@@ -278,7 +282,11 @@ private actor ChoiceFilter<T: Selectable> {
 extension ChoiceFilter {
     private func run(_ job: Job) async -> [FilteredChoiceItem<T>] {
         guard !job.filter.isEmpty else {
-            return job.choices.enumerated().map(FilteredChoiceItem.init(index:choice:))
+            if job.reverse {
+                return job.choices.enumerated().reversed().map(FilteredChoiceItem.init(index:choice:))
+            } else {
+                return job.choices.enumerated().map(FilteredChoiceItem.init(index:choice:))
+            }
         }
 
         let caseSensitive: Bool
@@ -288,10 +296,22 @@ extension ChoiceFilter {
         case .caseSensitiveIfFilterContainsUppercase: caseSensitive = job.filter.contains(where: { $0.isUppercase })
         }
 
-        let filtered = job.choices.enumerated().filter {
-            isMatch($1.description, filter: job.filter, caseSensitive: caseSensitive)
+        let enumeratedChoices = job.choices.enumerated()
+        if job.reverse {
+            return self.runFilter(enumeratedChoices.reversed(), filter: job.filter, caseSensitive: caseSensitive)
+        } else {
+            return self.runFilter(enumeratedChoices, filter: job.filter, caseSensitive: caseSensitive)
+        }
+    }
+
+    private func runFilter<S: Sequence>(
+        _ choices: S,
+        filter: String,
+        caseSensitive: Bool
+    ) -> [FilteredChoiceItem<T>] where S.Element == (offset: Int, element: T) {
+        return choices.filter {
+            isMatch($1.description, filter: filter, caseSensitive: caseSensitive)
         }.map(FilteredChoiceItem.init(index:choice:))
-        return filtered
     }
 }
 
