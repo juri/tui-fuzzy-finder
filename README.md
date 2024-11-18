@@ -26,6 +26,11 @@ in Swift.
 of `sfzf` is to make it easy to excercise the `tui-fuzzy-finder` features that are difficult to test
 automatically. It does not try to compete with `fzf`.
 
+## Documentation
+
+[Documentation](https://swiftpackageindex.com/juri/swift-tui-fuzzy-finder/documentation)
+is available at the Swift Package Index.
+
 ## Command line usage
 
 To build and install the executable run `swift build -c release`, then copy `.build/release/sfzf`
