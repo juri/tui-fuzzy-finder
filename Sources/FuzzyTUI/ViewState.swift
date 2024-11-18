@@ -49,7 +49,7 @@ final class ViewState<T: Selectable> {
                     }
                     self.current = current
                 } else if self.current == nil {
-                    self.current = 0
+                    self.current = filteredChoices.count - 1
                 }
                 let currentChanged = self.current != oldCurrent
 
