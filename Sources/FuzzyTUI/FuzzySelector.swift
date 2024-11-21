@@ -45,7 +45,7 @@ extension FuzzySelectorView {
                 isActive: false
             )
             codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
-            codes.append(.literal(String(describing: oldItem.choice)))
+            codes.append(.literal(self.viewState.format(oldItem)))
             codes.append(.setGraphicsRendition([.reset]))
         }
 
@@ -67,7 +67,7 @@ extension FuzzySelectorView {
                 isActive: true
             )
             codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
-            codes.append(.literal(String(describing: newItem.choice)))
+            codes.append(.literal(self.viewState.format(newItem)))
             codes.append(.setGraphicsRendition([.reset]))
 
             outputCode(.moveBottom(viewState: self.viewState))
@@ -96,7 +96,7 @@ extension FuzzySelectorView {
                     isActive: false
                 )
                 codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
-                codes.append(.literal(String(describing: newBottommostItem.choice)))
+                codes.append(.literal(self.viewState.format(newBottommostItem)))
                 codes.append(.setGraphicsRendition([.reset]))
             }
 
@@ -119,7 +119,7 @@ extension FuzzySelectorView {
                     isActive: true
                 )
                 codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
-                codes.append(.literal(String(describing: newChoiceItem.choice)))
+                codes.append(.literal(self.viewState.format(newChoiceItem)))
                 codes.append(.setGraphicsRendition([.reset]))
             }
 
@@ -151,7 +151,7 @@ extension FuzzySelectorView {
                 isActive: false
             )
             codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
-            codes.append(.literal(String(describing: oldItem.choice)))
+            codes.append(.literal(self.viewState.format(oldItem)))
             codes.append(.setGraphicsRendition([.reset]))
         }
 
@@ -173,7 +173,7 @@ extension FuzzySelectorView {
                 isActive: true
             )
             codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
-            codes.append(.literal(String(describing: newItem.choice)))
+            codes.append(.literal(self.viewState.format(newItem)))
             codes.append(.setGraphicsRendition([.reset]))
 
             codes.append(.moveCursor(x: 0, y: self.viewState.size.height))
@@ -204,7 +204,7 @@ extension FuzzySelectorView {
                     isActive: false
                 )
                 codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
-                codes.append(.literal(String(describing: newTopmostItem.choice)))
+                codes.append(.literal(self.viewState.format(newTopmostItem)))
                 codes.append(.setGraphicsRendition([.reset]))
             }
 
@@ -225,7 +225,7 @@ extension FuzzySelectorView {
                     isActive: true
                 )
                 codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
-                codes.append(.literal(String(describing: newChoiceItem.choice)))
+                codes.append(.literal(self.viewState.format(newChoiceItem)))
                 codes.append(.setGraphicsRendition([.reset]))
             }
 
@@ -268,7 +268,7 @@ extension FuzzySelectorView {
                 index: index
             )
             codes.append(.setGraphicsRendition(setGraphicsModes(textAttributes: textAttrs)))
-            codes.append(.literal(String(describing: choiceItem.choice)))
+            codes.append(.literal(self.viewState.format(choiceItem)))
         }
         outputCodes(codes)
     }
@@ -464,7 +464,7 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
         let viewState = ViewState(
             choices: [T](),
             matchCaseSensitivity: matchCaseSensitivity ?? .caseSensitiveIfFilterContainsUppercase,
-            maxWidth: terminalSize.width - 3,
+            maxWidth: terminalSize.width - 2,
             reverse: reverse,
             size: terminalSize
         )
