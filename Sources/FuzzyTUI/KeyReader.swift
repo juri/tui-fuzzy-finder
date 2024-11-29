@@ -17,7 +17,7 @@ final class KeyReader {
             while !self.stopped.withLock({ $0 }) {
                 let key = { () -> TerminalKey? in
                     var buffer = [UInt8](repeating: 0, count: 4)
-                    let bytesRead = read(STDIN_FILENO, &buffer, 4)
+                    let bytesRead = read(self.tty.fileHandle.fileDescriptor, &buffer, 4)
                     guard bytesRead > 0 else { return nil }
                     if bytesRead == 1 {
                         switch buffer[0] {

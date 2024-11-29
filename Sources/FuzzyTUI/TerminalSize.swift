@@ -10,9 +10,10 @@ public struct TerminalSize: Sendable, Equatable {
 
 extension TerminalSize {
     /// Return the current terminal size.
-    public static func current() -> Self {
+    public static func current() -> Self? {
         var w = winsize()
-        _ = ioctl(STDOUT_FILENO, UInt(TIOCGWINSZ), &w)
+        guard let tty = FileHandle.init(forReadingAtPath: "/dev/tty") else { return nil }
+        _ = ioctl(tty.fileDescriptor, UInt(TIOCGWINSZ), &w)
         return TerminalSize(height: Int(w.ws_row), width: Int(w.ws_col))
     }
 }

@@ -8,13 +8,19 @@ public typealias Selectable = CustomStringConvertible & Sendable & Equatable
 @MainActor
 final class FuzzySelectorView<T: Selectable> {
     private let appearance: Appearance
+    private let outTTY: OutTTY
+    private let tty: TTY
     private let viewState: ViewState<T>
 
     init(
         appearance: Appearance,
+        outTTY: OutTTY,
+        tty: TTY,
         viewState: ViewState<T>
     ) {
         self.appearance = appearance
+        self.outTTY = outTTY
+        self.tty = tty
         self.viewState = viewState
     }
 }
@@ -348,45 +354,38 @@ private extension FuzzySelectorView {
         case (true, true): return self.appearance.highlightedTextAttributes
         }
     }
-}
 
-@MainActor
-func write(_ strings: [String]) {
-    for string in strings {
-        try! FileHandle.standardOutput.write(contentsOf: Data(string.utf8))
+    func write(_ strings: [String]) {
+        self.outTTY.write(strings)
     }
-    try! FileHandle.standardOutput.synchronize()
-}
 
-@MainActor
-func write(_ string: String) {
-    write([string])
-}
+    func write(_ string: String) {
+        self.write([string])
+    }
 
-@MainActor
-func outputCode(_ code: ANSIControlCode) {
-    write(code.ansiCommand.message)
-}
+    func outputCode(_ code: ANSIControlCode) {
+        self.write(code.ansiCommand.message)
+    }
 
-@MainActor
-func outputCodes(_ codes: [ANSIControlCode]) {
-    write(codes.map(\.ansiCommand.message))
-}
+    func outputCodes(_ codes: [ANSIControlCode]) {
+        self.write(codes.map(\.ansiCommand.message))
+    }
 
-@MainActor
-func withSavedCursorPosition<T>(_ body: () throws -> T) rethrows -> T {
-    outputCodes([
-        .setCursorHidden(true),
-        .saveCursorPosition,
-    ])
-    defer {
-        outputCodes([
-            .restoreCursorPosition,
-            .setCursorHidden(false),
+    @discardableResult
+    func withSavedCursorPosition<V>(_ body: () throws -> V) rethrows -> V {
+        self.outputCodes([
+            .setCursorHidden(true),
+            .saveCursorPosition,
         ])
-    }
+        defer {
+            self.outputCodes([
+                .restoreCursorPosition,
+                .setCursorHidden(false),
+            ])
+        }
 
-    return try body()
+        return try body()
+    }
 }
 
 func setGraphicsModes(textAttributes: Set<Appearance.TextAttributes>) -> [SetGraphicsRendition] {
@@ -441,7 +440,9 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
     private let choices: Seq
     private let installSignalHandlers: Bool
     private let multipleSelection: Bool
+    private let outTTY: OutTTY
     private let tty: TTY
+    private let ttyHandle: FileHandle
     private let view: FuzzySelectorView<T>
     private let viewState: ViewState<T>
 
@@ -455,8 +456,19 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
         reverse: Bool = true
     ) {
         let appearance = appearance ?? .default
-        let terminalSize = TerminalSize.current()
-        guard let tty = TTY(fileHandle: STDIN_FILENO) else {
+        guard let terminalSize = TerminalSize.current() else {
+            // TODO: error
+            return nil
+        }
+        let ttyHandle = FileHandle(forReadingAtPath: "/dev/tty")!
+        guard let tty = TTY(fileHandle: ttyHandle) else {
+            // TODO: error
+            return nil
+        }
+
+        guard let outTTYHandle = FileHandle(forWritingAtPath: "/dev/tty"),
+            let outTTY = OutTTY(fileHandle: outTTYHandle)
+        else {
             // TODO: error
             return nil
         }
@@ -472,8 +484,15 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
         self.choices = choices
         self.installSignalHandlers = installSignalHandlers
         self.multipleSelection = multipleSelection
+        self.outTTY = outTTY
         self.tty = tty
-        self.view = FuzzySelectorView(appearance: appearance, viewState: viewState)
+        self.ttyHandle = ttyHandle
+        self.view = FuzzySelectorView(
+            appearance: appearance,
+            outTTY: outTTY,
+            tty: tty,
+            viewState: viewState
+        )
         self.viewState = viewState
     }
 
@@ -482,7 +501,7 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
     /// The `run` method consumes the `choices` sequence given in init and asynchronously returns the selected items.
     public func run() async throws -> [T] {
         let keyReader = KeyReader(tty: tty)
-        outputCodes([
+        self.view.outputCodes([
             .setCursorHidden(true),
             .saveCursorPosition,
             .saveScreen,
@@ -539,7 +558,7 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
                 self.view.showFilter()
                 self.view.showStatus()
             case .key(.down):
-                withSavedCursorPosition {
+                self.view.withSavedCursorPosition {
                     self.view.moveDown()
                 }
                 self.view.showFilter()
@@ -559,7 +578,7 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
                 break eventLoop
             case .key(.suspend):
                 try self.tty.unsetRaw()
-                outputCodes([
+                self.view.outputCodes([
                     .disableAlternativeBuffer,
                     .restoreScreen,
                 ])
@@ -570,7 +589,7 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
             case .key(.tab):
                 if self.multipleSelection {
                     self.viewState.toggleCurrentSelection()
-                    withSavedCursorPosition {
+                    self.view.withSavedCursorPosition {
                         self.view.moveDown()
                         self.view.redrawChoices()
                     }
@@ -582,7 +601,7 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
                 self.view.showFilter()
                 self.view.showStatus()
             case .key(.up):
-                withSavedCursorPosition {
+                self.view.withSavedCursorPosition {
                     self.view.moveUp()
                 }
                 self.view.showFilter()
@@ -590,12 +609,12 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
             case .key(nil): break
             case let .choice(choices):
                 self.viewState.addChoices(choices)
-                withSavedCursorPosition {
+                self.view.withSavedCursorPosition {
                     self.view.redrawChoices()
                 }
                 self.view.showStatus()
             case .viewStateChanged:
-                withSavedCursorPosition {
+                self.view.withSavedCursorPosition {
                     self.view.redrawChoices()
                 }
                 self.view.showStatus()
@@ -608,7 +627,8 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
             }
         }
         try self.tty.unsetRaw()
-        outputCodes([
+
+        self.view.outputCodes([
             .disableAlternativeBuffer,
             .restoreScreen,
             .restoreCursorPosition,
