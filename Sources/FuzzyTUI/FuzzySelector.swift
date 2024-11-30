@@ -431,6 +431,7 @@ enum Event<T: Selectable> {
     case key(TerminalKey?)
     case choice([T])
     case continueSignal
+    case resizeSignal
     case viewStateChanged
 }
 
@@ -525,9 +526,15 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
             .chunked(by: .repeating(every: .milliseconds(100)))
             .map { choices -> Event<T> in .choice(choices) }
 
-        let signals: [UnixSignal] = if self.installSignalHandlers { [.sigcont] } else { [] }
+        let signals: [UnixSignal] = if self.installSignalHandlers { [.sigcont, .sigwinch] } else { [] }
         let signalsSequence = await UnixSignalsSequence(trapping: signals)
-            .map { _ in Event<T>.continueSignal }
+            .compactMap { sig -> Event<T>? in
+                switch sig {
+                case .sigcont: return .continueSignal
+                case .sigwinch: return .resizeSignal
+                default: return nil
+                }
+            }
 
         var selection = [T]()
         let events = merge(keyEvents, choiceEvents, merge(viewStateUpdateEvents, signalsSequence))
@@ -536,6 +543,17 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
             switch event {
             case .continueSignal:
                 try self.continueAfterSuspension()
+            case .resizeSignal:
+                guard let terminalSize = TerminalSize.current() else {
+                    break eventLoop
+                }
+                self.viewState.resize(size: terminalSize)
+
+                self.view.withSavedCursorPosition {
+                    self.view.redrawChoices()
+                }
+                self.view.showStatus()
+                self.view.showFilter()
             case .key(.backspace):
                 self.viewState.editFilter(.backspace)
                 self.view.showFilter()

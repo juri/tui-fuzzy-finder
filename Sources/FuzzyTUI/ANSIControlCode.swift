@@ -42,10 +42,12 @@ enum ANSIControlCode {
         }
     }
 
+    @MainActor
     static func moveBottom<T>(viewState: ViewState<T>) -> Self {
         .moveCursor(x: 0, y: viewState.size.height - 1)
     }
 
+    @MainActor
     static func moveToLastLine<T>(viewState: ViewState<T>) -> Self {
         .moveCursor(x: 0, y: viewState.size.height - 3)
     }

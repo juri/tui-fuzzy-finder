@@ -1,6 +1,6 @@
 @MainActor
 final class ViewState<T: Selectable> {
-    let size: TerminalSize
+    public private(set) var size: TerminalSize
 
     var current: Int?
 
@@ -147,6 +147,13 @@ final class ViewState<T: Selectable> {
 
     var maxWidth: Int {
         self.size.width - 2
+    }
+
+    func resize(size: TerminalSize) {
+        self.size = size
+        let visibleLines =
+            max(self.choices.count - size.height + 2, 0)...max(self.choices.count - 1, 0)
+        self.visibleLines = visibleLines
     }
 
     func moveUp() {
