@@ -20,7 +20,6 @@ final class ViewState<T: Selectable> {
     init(
         choices: [T],
         matchCaseSensitivity: MatchCaseSensitivity,
-        maxWidth: Int,
         reverse: Bool,
         size: TerminalSize
     ) {
@@ -28,7 +27,7 @@ final class ViewState<T: Selectable> {
         self.unfilteredChoices = choices
         self.choiceFilter = ChoiceFilter(matchCaseSensitivity: matchCaseSensitivity)
         self.current = choices.isEmpty ? nil : choices.count - 1
-        self.maxWidth = maxWidth
+        self.maxWidth = size.width - 2
         self.reverse = reverse
         self.size = size
         self.visibleLines = max(choices.count - size.height + 2, 0)...max(choices.count - 1, 0)

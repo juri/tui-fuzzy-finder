@@ -476,7 +476,6 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
         let viewState = ViewState(
             choices: [T](),
             matchCaseSensitivity: matchCaseSensitivity ?? .caseSensitiveIfFilterContainsUppercase,
-            maxWidth: terminalSize.width - 2,
             reverse: reverse,
             size: terminalSize
         )
