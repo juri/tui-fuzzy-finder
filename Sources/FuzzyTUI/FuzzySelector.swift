@@ -587,7 +587,7 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
                 self.viewState.editFilter(.moveToStart)
                 self.view.showFilter()
             case .key(.return):
-                if self.multipleSelection {
+                if self.multipleSelection, !self.viewState.unfilteredSelection.isEmpty {
                     selection = self.viewState.unfilteredSelection.map { self.viewState.unfilteredChoices[$0] }
                 } else if let current = self.viewState.current {
                     selection = [self.viewState.unfilteredChoices[current]]
