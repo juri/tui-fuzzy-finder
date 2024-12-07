@@ -588,8 +588,8 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
             case .key(.return):
                 if self.multipleSelection, !self.viewState.unfilteredSelection.isEmpty {
                     selection = self.viewState.unfilteredSelection.map { self.viewState.unfilteredChoices[$0] }
-                } else if let current = self.viewState.current {
-                    selection = [self.viewState.unfilteredChoices[current]]
+                } else if let highlightedItem = viewState.highlightedItem {
+                    selection = [highlightedItem]
                 }
                 break eventLoop
             case .key(.suspend):

@@ -64,6 +64,11 @@ final class ViewState<T: Selectable> {
         }
     }
 
+    var highlightedItem: T? {
+        guard let current = self.current else { return nil }
+        return self.choices[current].choice
+    }
+
     func addChoices(_ choices: [T]) {
         self.unfilteredChoices.append(contentsOf: choices)
         self.choiceFilter.addJob(.init(choices: self.unfilteredChoices, filter: self.filter, reverse: self.reverse))
