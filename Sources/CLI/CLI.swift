@@ -21,18 +21,20 @@ struct FuzzyCLI: AsyncParsableCommand {
 
     mutating func run() async throws {
         let lines = DirectoryLister(root: URL(string: ".")!).contents
-        guard
-            let selector = FuzzySelector(
+        let choices: [URL]
+        do {
+            let selector = try FuzzySelector(
                 choices: lines,
                 installSignalHandlers: self.installSignalHandlers,
                 matchCaseSensitivity: self.caseSensitivity.matchCaseSensitivity,
                 multipleSelection: self.multipleSelection,
                 reverse: self.reverse
             )
-        else {
-            return
+            choices = try await selector.run()
+        } catch {
+            FileHandle.standardError.write(Data("Error: \(error)\n".utf8))
+            throw ExitCode(1)
         }
-        let choices = try await selector.run()
 
         for choice in choices {
             print(choice)

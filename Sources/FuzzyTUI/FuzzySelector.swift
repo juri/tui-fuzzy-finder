@@ -448,30 +448,29 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
     private let viewState: ViewState<T>
 
     /// Initialize a `FuzzySelector`.
-    public init?(
+    ///
+    /// - Throws: `TerminalError` if the terminal can't support the selector.
+    public init(
         choices: Seq,
         appearance: Appearance? = nil,
         installSignalHandlers: Bool = true,
         matchCaseSensitivity: MatchCaseSensitivity? = nil,
         multipleSelection: Bool = true,
         reverse: Bool = true
-    ) {
+    ) throws(TerminalError) {
         let appearance = appearance ?? .default
         guard let terminalSize = TerminalSize.current() else {
-            // TODO: error
-            return nil
+            throw TerminalError(message: "Failed to read terminal size")
         }
         let ttyHandle = FileHandle(forReadingAtPath: "/dev/tty")!
         guard let tty = TTY(fileHandle: ttyHandle) else {
-            // TODO: error
-            return nil
+            throw TerminalError(message: "Input not a TTY")
         }
 
         guard let outTTYHandle = FileHandle(forWritingAtPath: "/dev/tty"),
             let outTTY = OutTTY(fileHandle: outTTYHandle)
         else {
-            // TODO: error
-            return nil
+            throw TerminalError(message: "Output not a TTY")
         }
 
         let viewState = ViewState(
@@ -665,4 +664,9 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
         self.view.showFilter()
         self.view.showStatus()
     }
+}
+
+/// Error thrown if the terminal isn't suitable for running the selector.
+public struct TerminalError: Error {
+    public let message: String
 }
