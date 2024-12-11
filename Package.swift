@@ -14,8 +14,8 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.5.0"),
         .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0"),
         .package(
-            url: "https://github.com/juri/swift-service-lifecycle.git",
-            revision: "90fa918c822fba4110945973357e166349d337d0"
+            url: "https://github.com/swift-server/swift-service-lifecycle.git",
+            revision: "a6a4bc71ccfa2fd4e33ca247855df139d904d51f"
         ),
     ],
     targets: [
