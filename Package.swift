@@ -7,7 +7,7 @@ let package = Package(
     name: "tui-fuzzy-finder",
     platforms: [.macOS(.v15)],
     products: [
-        .executable(name: "sfzf", targets: ["CLI"]),
+        .executable(name: "sfzf", targets: ["FuzzyFinderCLI"]),
         .library(name: "FuzzyTUI", targets: ["FuzzyTUI"]),
     ],
     dependencies: [
@@ -33,7 +33,7 @@ let package = Package(
             ]
         ),
         .executableTarget(
-            name: "CLI",
+            name: "FuzzyFinderCLI",
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .target(name: "FuzzyTUI"),
