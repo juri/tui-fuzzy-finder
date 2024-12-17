@@ -9,7 +9,7 @@ import Testing
 
 @testable import FuzzyTUI
 
-struct FuzzyTUITests {
+struct MatchTests {
     @Test(
         "Successful matches",
         arguments: [

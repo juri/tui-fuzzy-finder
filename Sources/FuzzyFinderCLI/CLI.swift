@@ -16,6 +16,9 @@ struct FuzzyCLI: AsyncParsableCommand {
     @Flag
     var reverse: Bool = false
 
+    @Flag(inversion: .prefixedNo)
+    var score: Bool = true
+
     @Option(name: [.customShort("C"), .customLong("case")])
     var caseSensitivity: CaseSensitivity = .smart
 
@@ -31,6 +34,7 @@ struct FuzzyCLI: AsyncParsableCommand {
                 installSignalHandlers: self.installSignalHandlers,
                 matchCaseSensitivity: self.caseSensitivity.matchCaseSensitivity,
                 multipleSelection: self.multipleSelection,
+                orderMatchesByScore: self.score,
                 reverse: self.reverse
             )
             choices = try await selector.run()

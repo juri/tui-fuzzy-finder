@@ -5,6 +5,7 @@ final class ViewState<T: Selectable> {
     var current: Int?
 
     private let choiceFilter: ChoiceFilter<T>
+    private let orderMatchesByScore: Bool
     private let outputStream: AsyncStream<Void>
     private let reverse: Bool
 
@@ -19,6 +20,7 @@ final class ViewState<T: Selectable> {
     init(
         choices: [T],
         matchCaseSensitivity: MatchCaseSensitivity,
+        orderMatchesByScore: Bool,
         reverse: Bool,
         size: TerminalSize
     ) {
@@ -26,6 +28,7 @@ final class ViewState<T: Selectable> {
         self.unfilteredChoices = choices
         self.choiceFilter = ChoiceFilter(matchCaseSensitivity: matchCaseSensitivity)
         self.current = choices.isEmpty ? nil : choices.count - 1
+        self.orderMatchesByScore = orderMatchesByScore
         self.reverse = reverse
         self.size = size
         self.visibleLines = max(choices.count - size.height + 2, 0)...max(choices.count - 1, 0)
@@ -71,7 +74,14 @@ final class ViewState<T: Selectable> {
 
     func addChoices(_ choices: [T]) {
         self.unfilteredChoices.append(contentsOf: choices)
-        self.choiceFilter.addJob(.init(choices: self.unfilteredChoices, filter: self.filter, reverse: self.reverse))
+        self.choiceFilter.addJob(
+            .init(
+                choices: self.unfilteredChoices,
+                filter: self.filter,
+                orderByScore: self.orderMatchesByScore,
+                reverse: self.reverse
+            )
+        )
     }
 
     func editFilter(_ action: EditAction) {
@@ -134,7 +144,14 @@ final class ViewState<T: Selectable> {
         get { self._filter }
         set {
             self._filter = newValue
-            self.choiceFilter.addJob(.init(choices: self.unfilteredChoices, filter: newValue, reverse: self.reverse))
+            self.choiceFilter.addJob(
+                .init(
+                    choices: self.unfilteredChoices,
+                    filter: newValue,
+                    orderByScore: self.orderMatchesByScore,
+                    reverse: self.reverse
+                )
+            )
         }
     }
 
@@ -257,6 +274,7 @@ private actor ChoiceFilter<T: Selectable> {
     struct Job {
         var choices: [T]
         var filter: String
+        var orderByScore: Bool
         var reverse: Bool
     }
 
@@ -320,14 +338,27 @@ extension ChoiceFilter {
         }
 
         let enumeratedChoices = job.choices.enumerated()
-        if job.reverse {
-            return self.runFilter(enumeratedChoices.reversed(), filter: job.filter, caseSensitive: caseSensitive)
-        } else {
-            return self.runFilter(enumeratedChoices, filter: job.filter, caseSensitive: caseSensitive)
+        switch (job.reverse, job.orderByScore) {
+        case (true, false):
+            return self.runOrderPreservingFilter(
+                enumeratedChoices.reversed(), filter: job.filter, caseSensitive: caseSensitive
+            )
+        case (false, false):
+            return self.runOrderPreservingFilter(
+                enumeratedChoices, filter: job.filter, caseSensitive: caseSensitive
+            )
+        case (true, true):
+            return self.runScoringFilter(
+                enumeratedChoices.reversed(), filter: job.filter, caseSensitive: caseSensitive
+            )
+        case (false, true):
+            return self.runScoringFilter(
+                enumeratedChoices, filter: job.filter, caseSensitive: caseSensitive
+            )
         }
     }
 
-    private func runFilter<S: Sequence>(
+    private func runOrderPreservingFilter<S: Sequence>(
         _ choices: S,
         filter: String,
         caseSensitive: Bool
@@ -336,6 +367,42 @@ extension ChoiceFilter {
             isMatch($1.description, filter: filter, caseSensitive: caseSensitive)
         }.map(FilteredChoiceItem.init(index:choice:))
     }
+
+    private func runScoringFilter<S: Sequence>(
+        _ choices: S,
+        filter: String,
+        caseSensitive: Bool
+    ) -> [FilteredChoiceItem<T>] where S.Element == (offset: Int, element: T) {
+        return choices.compactMap { (choice: S.Element) -> (Int, S.Element)? in
+            switch scoreMatch(choice.element.description, filter: filter, caseSensitive: caseSensitive) {
+            case .noMatch: return nil
+            case let .match(score: score): return (score, choice)
+            }
+        }.sorted { (lhs: (Int, (offset: Int, element: T)), rhs: (Int, (offset: Int, element: T))) in
+            lhs.0 > rhs.0
+        }.map { _, choice in
+            FilteredChoiceItem.init(index: choice.offset, choice: choice.element)
+        }
+    }
+}
+
+enum ScoredMatchResult: Equatable {
+    case noMatch
+    case match(score: Int)
+}
+
+func scoreMatch(_ string: String, filter: String, caseSensitive: Bool) -> ScoredMatchResult {
+    var characters = Array(caseSensitive ? string : string.lowercased())
+    let filterCharacters = Array(caseSensitive ? filter : filter.lowercased())
+    var score = 0
+    for filterCharacter in filterCharacters {
+        guard let index = characters.firstIndex(of: filterCharacter) else {
+            return .noMatch
+        }
+        score += index
+        characters.removeFirst(index + 1)
+    }
+    return .match(score: score)
 }
 
 func isMatch(_ string: String, filter: String, caseSensitive: Bool) -> Bool {

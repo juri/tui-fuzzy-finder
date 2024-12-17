@@ -456,6 +456,7 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
         installSignalHandlers: Bool = true,
         matchCaseSensitivity: MatchCaseSensitivity? = nil,
         multipleSelection: Bool = true,
+        orderMatchesByScore: Bool = true,
         reverse: Bool = true
     ) throws(TerminalError) {
         let appearance = appearance ?? .default
@@ -476,6 +477,7 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
         let viewState = ViewState(
             choices: [T](),
             matchCaseSensitivity: matchCaseSensitivity ?? .caseSensitiveIfFilterContainsUppercase,
+            orderMatchesByScore: orderMatchesByScore,
             reverse: reverse,
             size: terminalSize
         )
