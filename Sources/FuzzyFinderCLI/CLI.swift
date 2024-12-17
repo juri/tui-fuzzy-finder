@@ -19,8 +19,11 @@ struct FuzzyCLI: AsyncParsableCommand {
     @Option(name: [.customShort("C"), .customLong("case")])
     var caseSensitivity: CaseSensitivity = .smart
 
+    @Argument
+    var root: String = "."
+
     mutating func run() async throws {
-        let lines = DirectoryLister(root: URL(fileURLWithPath: ".")).contents
+        let lines = DirectoryLister(root: URL(fileURLWithPath: self.root)).contents
         let choices: [String]
         do {
             let selector = try FuzzySelector(
