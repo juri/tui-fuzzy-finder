@@ -1,4 +1,4 @@
-private let textColor: Appearance.Color = .palette256(15)
+private let textColor: Appearance.Color = .palette256(231)
 private let backgroundColor: Appearance.Color = .palette256(237)
 
 /// `Appearance` contains the configuration parameters for the picker.
