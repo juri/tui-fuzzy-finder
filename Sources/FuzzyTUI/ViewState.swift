@@ -314,7 +314,7 @@ private actor ChoiceFilter<T: Selectable> {
     }
 
     nonisolated func addJob(
-        @_inheritActorContext _ job: Job
+        _ job: Job
     ) {
         self.inputContinuation.yield(job)
     }
