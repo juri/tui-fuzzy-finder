@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-15
+    runs-on: ubuntu-latest
 
     steps:
       # setup-swift doesn't support Swift 6 so use the Swift included in macos-latest.
