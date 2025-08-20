@@ -27,8 +27,8 @@ jobs:
       - name: Get swift version
         run: swift --version # Swift 6.0
 
-      - name: Find swift-format path
-        run: xcrun --find swift-format
+      # - name: Find swift-format path
+      #   run: xcrun --find swift-format
 
       - name: Check Formatting
         run: swift format lint --strict --recursive Sources Tests Package.swift
