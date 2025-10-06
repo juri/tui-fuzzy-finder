@@ -1,3 +1,5 @@
+import TerminalANSI
+
 private let textColor: Appearance.Color = .palette256(231)
 private let backgroundColor: Appearance.Color = .palette256(237)
 

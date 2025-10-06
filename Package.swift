@@ -17,6 +17,7 @@ let package = Package(
             url: "https://github.com/swift-server/swift-service-lifecycle.git",
             from: "2.6.3"
         ),
+        .package(url: "https://github.com/juri/terminal-ansi", revision: "1dfc45338b2d0393eaff05c0c06c153f3923becf"),
     ],
     targets: [
         .target(
@@ -24,6 +25,7 @@ let package = Package(
             dependencies: [
                 .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
                 .product(name: "UnixSignals", package: "swift-service-lifecycle"),
+                .product(name: "TerminalANSI", package: "terminal-ansi"),
             ]
         ),
         .testTarget(

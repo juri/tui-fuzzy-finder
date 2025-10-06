@@ -1,5 +1,6 @@
 import AsyncAlgorithms
 import Foundation
+import TerminalANSI
 import UnixSignals
 
 /// The type used for selectable items.
@@ -76,11 +77,11 @@ extension FuzzySelectorView {
             codes.append(.literal(self.viewState.format(newItem)))
             codes.append(.setGraphicsRendition([.reset]))
 
-            outputCode(.moveBottom(viewState: self.viewState))
+            outputCode(self.viewState.makeCodeMoveBottom())
         } else {
             codes.append(.moveCursor(x: 0, y: 0))
             codes.append(.clearLine)
-            codes.append(.moveToLastLine(viewState: self.viewState))
+            codes.append(self.viewState.makeCodeMoveToLastLine())
             codes.append(.scrollUp(1))
 
             self.viewState.moveDown()
@@ -129,7 +130,7 @@ extension FuzzySelectorView {
                 codes.append(.setGraphicsRendition([.reset]))
             }
 
-            codes.append(.moveBottom(viewState: self.viewState))
+            codes.append(self.viewState.makeCodeMoveBottom())
         }
         outputCodes(codes)
     }
@@ -184,7 +185,7 @@ extension FuzzySelectorView {
 
             codes.append(.moveCursor(x: 0, y: self.viewState.size.height))
         } else {
-            codes.append(.moveToLastLine(viewState: self.viewState))
+            codes.append(self.viewState.makeCodeMoveToLastLine())
             codes.append(.clearLine)
             codes.append(.moveCursor(x: 0, y: 0))
             codes.append(.insertLines(1))
@@ -281,7 +282,7 @@ extension FuzzySelectorView {
 
     func showFilter() {
         outputCodes([
-            .moveBottom(viewState: viewState),
+            self.viewState.makeCodeMoveBottom(),
             .clearLine,
             .literal(viewState.filter),
             .moveCursorToColumn(n: viewState.editPosition + 1),
@@ -298,7 +299,7 @@ extension FuzzySelectorView {
 
         withSavedCursorPosition {
             outputCodes([
-                .moveBottom(viewState: viewState),
+                self.viewState.makeCodeMoveBottom(),
                 .moveCursorUp(n: 1),
                 .clearLine,
                 .literal(lineStart),
@@ -398,7 +399,13 @@ func setGraphicsModes(textAttributes: Set<Appearance.TextAttributes>) -> [SetGra
         case let .background(.palette256(v)):
             return .background256(v)
         case let .background(.rgb(red: r, green: g, blue: b)):
-            return .backgroundRGB(red: r, green: g, blue: b)
+            return .backgroundRGB(
+                RGBColor8(
+                    r: RGBColor8.Component(rawValue: UInt8(r)),
+                    g: RGBColor8.Component(rawValue: UInt8(g)),
+                    b: RGBColor8.Component(rawValue: UInt8(b)),
+                )
+            )
         case .bold:
             return .bold
         case let .foreground(.basic(p)):
@@ -408,7 +415,13 @@ func setGraphicsModes(textAttributes: Set<Appearance.TextAttributes>) -> [SetGra
         case let .foreground(.palette256(v)):
             return .text256(v)
         case let .foreground(.rgb(red: r, green: g, blue: b)):
-            return .textRGB(red: r, green: g, blue: b)
+            return .textRGB(
+                RGBColor8(
+                    r: RGBColor8.Component(rawValue: UInt8(r)),
+                    g: RGBColor8.Component(rawValue: UInt8(g)),
+                    b: RGBColor8.Component(rawValue: UInt8(b)),
+                )
+            )
         case .italic:
             return .italic
         case .underline:
@@ -671,4 +684,17 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
 /// Error thrown if the terminal isn't suitable for running the selector.
 public struct TerminalError: Error {
     public let message: String
+}
+
+func debug(_ message: String, reset: Bool = false) {
+    let fh = FileHandle(forUpdatingAtPath: "/tmp/swiftfzfdebug.log")!
+    if reset {
+        try! fh.truncate(atOffset: 0)
+    }
+    if message.isEmpty { return }
+
+    try! fh.seekToEnd()
+    try! fh.write(contentsOf: Data(message.utf8))
+    try! fh.write(contentsOf: Data("\n".utf8))
+    try! fh.close()
 }

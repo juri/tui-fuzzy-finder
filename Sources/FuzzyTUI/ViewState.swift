@@ -1,3 +1,5 @@
+import TerminalANSI
+
 @MainActor
 final class ViewState<T: Selectable> {
     public private(set) var size: TerminalSize
@@ -214,6 +216,14 @@ final class ViewState<T: Selectable> {
         }
         return max(0, (self.size.height - self.visibleLines.count)) + index
             - self.visibleLines.lowerBound - 2
+    }
+
+    func makeCodeMoveBottom() -> ANSIControlCode {
+        .moveCursor(x: 0, y: self.size.height - 1)
+    }
+
+    func makeCodeMoveToLastLine() -> ANSIControlCode {
+        .moveCursor(x: 0, y: self.size.height - 3)
     }
 
     @discardableResult
