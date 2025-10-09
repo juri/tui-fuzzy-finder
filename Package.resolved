@@ -1,5 +1,5 @@
 {
-  "originHash" : "7d46c410b0b3d939a8928e2e51def4157082d03187ccf5498ae6f6add53240c0",
+  "originHash" : "7989e97c60b8a051ca153f30b95ab7a9bfe10150bf47244a9391d9f45a15399e",
   "pins" : [
     {
       "identity" : "swift-argument-parser",
@@ -51,7 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/juri/terminal-ansi",
       "state" : {
-        "revision" : "1dfc45338b2d0393eaff05c0c06c153f3923becf"
+        "revision" : "bb6530f2f29d059629adf76ef3a27b5e06382059",
+        "version" : "0.1.1"
       }
     }
   ],
