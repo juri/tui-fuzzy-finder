@@ -473,10 +473,13 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
         reverse: Bool = true
     ) throws(TerminalError) {
         let appearance = appearance ?? .default
-        guard let terminalSize = TerminalSize.current() else {
+        let ttyHandle = FileHandle(forReadingAtPath: "/dev/tty")!
+        let terminalSize: TerminalSize
+        do {
+            terminalSize = try TerminalSize.current(fileHandle: ttyHandle)
+        } catch {
             throw TerminalError(message: "Failed to read terminal size")
         }
-        let ttyHandle = FileHandle(forReadingAtPath: "/dev/tty")!
         guard let tty = TTY(fileHandle: ttyHandle) else {
             throw TerminalError(message: "Input not a TTY")
         }
@@ -558,9 +561,7 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
             case .continueSignal:
                 try self.continueAfterSuspension()
             case .resizeSignal:
-                guard let terminalSize = TerminalSize.current() else {
-                    break eventLoop
-                }
+                let terminalSize = try TerminalSize.current(fileHandle: self.ttyHandle)
                 self.viewState.resize(size: terminalSize)
 
                 self.view.withSavedCursorPosition {
