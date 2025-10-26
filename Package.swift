@@ -17,7 +17,7 @@ let package = Package(
             url: "https://github.com/swift-server/swift-service-lifecycle.git",
             from: "2.6.3"
         ),
-        .package(url: "https://github.com/juri/terminal-ansi", from: "0.1.0"),
+        .package(url: "https://github.com/juri/terminal-ansi", from: "0.3.0"),
     ],
     targets: [
         .target(
