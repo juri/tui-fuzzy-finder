@@ -14,41 +14,71 @@ final class KeyReader {
 
     func readKeys(to callback: @escaping @Sendable (Result<TerminalKey?, any Error>) -> Void) {
         self.queue.async {
-            while !self.stopped.withLock({ $0 }) {
-                let key = { () -> TerminalKey? in
-                    var buffer = [UInt8](repeating: 0, count: 4)
-                    let bytesRead = read(self.tty.fileHandle.fileDescriptor, &buffer, 4)
-                    guard bytesRead > 0 else { return nil }
-                    if bytesRead == 1 {
-                        switch buffer[0] {
-                        case 0x01: return .moveToStart
-                        case 0x03: return .terminate
-                        case 0x04: return .delete
-                        case 0x05: return .moveToEnd
-                        case 0x09: return .tab
-                        case 0x0B: return .deleteToEnd
-                        case 0x0D: return .return
-                        case 0x14: return .transpose
-                        case 0x15: return .deleteToStart
-                        case 0x1A: return .suspend
-                        case 0x7F: return .backspace
-                        default: return .character(Character(.init(buffer[0])))
-                        }
+            var buffer = [UInt8](repeating: 0, count: 4)
+            var bufferPoint = 0
+            loop: while !self.stopped.withLock({ $0 }) {
+                let key: TerminalKey?
+                if bufferPoint < 4 {
+                    var inputBuffer = [UInt8](repeating: 0, count: 4 - bufferPoint)
+                    let bytesRead = read(self.tty.fileHandle.fileDescriptor, &inputBuffer, 4 - bufferPoint)
+                    for byteIndex in 0..<bytesRead {
+                        let byte = inputBuffer[byteIndex]
+                        let targetIndex = bufferPoint + byteIndex
+                        buffer[targetIndex] = byte
                     }
-                    if bytesRead == 3 {
-                        switch (buffer[0], buffer[1], buffer[2]) {
-                        case (0x1B, 0x5B, 0x41): return .up
-                        case (0x1B, 0x5B, 0x42): return .down
-                        case (0x1B, 0x5B, 0x43): return .right
-                        case (0x1B, 0x5B, 0x44): return .left
-                        default: break
-                        }
+                    bufferPoint += bytesRead
+                }
+
+                guard bufferPoint > 0 else {
+                    continue loop
+                }
+                if bufferPoint == 1 {
+                    switch buffer[0] {
+                    case 0x01: key = .moveToStart
+                    case 0x03: key = .terminate
+                    case 0x04: key = .delete
+                    case 0x05: key = .moveToEnd
+                    case 0x09: key = .tab
+                    case 0x0B: key = .deleteToEnd
+                    case 0x0D: key = .return
+                    case 0x14: key = .transpose
+                    case 0x15: key = .deleteToStart
+                    case 0x1A: key = .suspend
+                    case 0x7F: key = .backspace
+                    default: key = .character(Character(.init(buffer[0])))
                     }
-                    guard let character = toCharacter(bytes: buffer[0..<bytesRead]) else {
-                        return nil
+                    consumeStart(array: &buffer, bytes: 1)
+                    bufferPoint -= 1
+                } else if bufferPoint >= 3 {
+                    switch (buffer[0], buffer[1], buffer[2]) {
+                    case (0x1B, 0x5B, 0x41): key = .up
+                    case (0x1B, 0x5B, 0x42): key = .down
+                    case (0x1B, 0x5B, 0x43): key = .right
+                    case (0x1B, 0x5B, 0x44): key = .left
+                    default: continue loop
                     }
-                    return .character(character)
-                }()
+                    consumeStart(array: &buffer, bytes: 3)
+                    bufferPoint -= 3
+                } else if var str = String(bytes: buffer[0..<bufferPoint], encoding: .utf8),
+                    str.count > 0
+                {
+                    let first = str.removeFirst()
+                    let count = first.utf8.count
+                    consumeStart(array: &buffer, bytes: count)
+                    bufferPoint -= count
+                    key = .character(first)
+                } else if bufferPoint == 4 {
+                    // buffer is already full, and we apparently didn't know what to do with it.
+                    buffer[0] = 0
+                    buffer[1] = 0
+                    buffer[2] = 0
+                    buffer[3] = 0
+                    bufferPoint = 0
+                    key = nil
+                } else {
+                    key = nil
+                }
+
                 callback(.success(key))
             }
         }
@@ -66,7 +96,18 @@ final class KeyReader {
     }
 }
 
-func toCharacter(bytes: ArraySlice<UInt8>) -> Character? {
-    guard let str = String(bytes: bytes, encoding: .utf8) else { return nil }
-    return Character(str)
+private func consumeStart(array: inout [UInt8], bytes: Int) {
+    if bytes > 0 && bytes < array.count {
+        array.withUnsafeMutableBufferPointer { buffer in
+            let src = buffer.baseAddress! + bytes
+            let dst = buffer.baseAddress!
+            let count = buffer.count - bytes
+
+            // Move remaining bytes to the front
+            dst.moveInitialize(from: src, count: count)
+
+            // Zero out the end
+            (dst + count).initialize(repeating: 0, count: bytes)
+        }
+    }
 }
