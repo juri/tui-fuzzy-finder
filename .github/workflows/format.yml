@@ -1,0 +1,19 @@
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/format.yml'
+      - '.swift-format'
+      - '**/*.swift'
+  push:
+    branches:
+      - main
+
+jobs:
+  swift-check-format:
+    runs-on: ubuntu-latest
+    container: "swift:6.2-noble"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run swift format
+        run: swift format lint --strict --recursive .

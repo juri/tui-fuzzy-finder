@@ -2,39 +2,46 @@ name: build
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
-    branches: [main]
-  workflow_dispatch:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
+  build-ubuntu:
+    name: Build on Ubuntu
     runs-on: ubuntu-latest
-
+    container: ${{ format('swift:{0}-{1}', matrix.swift.version, matrix.os) }}
+    if: "!contains(github.event.head_commit.message, 'ci skip')"
+    strategy:
+      matrix:
+        os:
+          - noble
+        swift:
+          - version: "6.2"
     steps:
-      # setup-swift doesn't support Swift 6 so use the Swift included in macos-latest.
-      - name: Set up Swift
-        uses: beeauvin/swiftly-swift@v1
-        with:
-          swift-version: "6.1.2"
+    - uses: actions/checkout@v4
+    - uses: brightdigit/swift-build@v1.2.1
 
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # - name: Select Xcode
-      #   run: sudo xcode-select -s '/Applications/Xcode_16.0.app/Contents/Developer'
-
-      - name: Get swift version
-        run: swift --version # Swift 6.0
-
-      # - name: Find swift-format path
-      #   run: xcrun --find swift-format
-
-      - name: Check Formatting
-        run: swift format lint --strict --recursive Sources Tests Package.swift
-
-      - name: Build
-        run: swift build
-
-      - name: Run tests
-        run: swift test
+  build-macos:
+    name: Build on macOS
+    runs-on: ${{ matrix.runs-on }}
+    if: "!contains(github.event.head_commit.message, 'ci skip')"
+    strategy:
+      matrix:
+        include:
+          # SPM Build Matrix
+          - runs-on: macos-26
+            xcode: "/Applications/Xcode_26.0.app"
+          - runs-on: macos-15
+            xcode: "/Applications/Xcode_26.0.app"
+    steps:
+    - uses: actions/checkout@v4
+    - uses: brightdigit/swift-build@v1.2.1
+      with:
+        xcode: ${{ matrix.xcode }}
