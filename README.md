@@ -21,6 +21,10 @@ items from the list and use fuzzy search to filter the list, and when they press
 aims to provide the core functionality of `fzf` in a Swift library, so you can write your tools
 in Swift.
 
+Because `tui-fuzzy-finder` is in Swift and runs inside your code, you can use use any normal Swift values
+for the list, as long as they conform to `CustomStringConvertible`. You can even make them display
+ANSI escape sequences.
+
 ## What is included
 
 `tui-fuzzy-finder` consists of a Swift library and an executable, `sfzf`, that uses it. The purpose
