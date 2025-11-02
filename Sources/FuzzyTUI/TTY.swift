@@ -1,4 +1,5 @@
 import Foundation
+import TerminalInput
 
 @MainActor
 final class TTY {
@@ -11,34 +12,12 @@ final class TTY {
     }
 
     func setRaw() throws {
-        var originalTermios = termios()
-
-        if tcgetattr(fileHandle.fileDescriptor, &originalTermios) == -1 {
-            throw Failure.getAttributes
-        }
-
-        self.originalTermios = originalTermios
-        var raw = originalTermios
-
-        raw.c_iflag &= ~tcflag_t(BRKINT | ICRNL | INPCK | ISTRIP | IXON)
-        raw.c_oflag &= ~tcflag_t(OPOST)
-        raw.c_cflag |= tcflag_t(CS8)
-        raw.c_lflag &= ~tcflag_t(ECHO | ICANON | IEXTEN | ISIG)
-
-        withUnsafeMutablePointer(to: &raw.c_cc) {
-            $0.withMemoryRebound(to: cc_t.self, capacity: Int(NCCS)) { $0[Int(VMIN)] = 1 }
-        }
-
-        if tcsetattr(self.fileHandle.fileDescriptor, TCSAFLUSH, &raw) < 0 {
-            throw Failure.setAttributes
-        }
+        self.originalTermios = try KeyReader.setRaw(fileHandle: self.fileHandle)
     }
 
     func unsetRaw() throws {
-        guard var originalTermios = self.originalTermios else { return }
-        if tcsetattr(self.fileHandle.fileDescriptor, TCSAFLUSH, &originalTermios) < 0 {
-            throw Failure.setAttributes
-        }
+        guard let originalTermios = self.originalTermios else { return }
+        try KeyReader.unsetRaw(fileHandle: self.fileHandle, originalTermios: originalTermios)
     }
 }
 

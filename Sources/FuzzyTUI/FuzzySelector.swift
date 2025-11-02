@@ -1,6 +1,7 @@
 import AsyncAlgorithms
 import Foundation
 import TerminalANSI
+import TerminalInput
 import UnixSignals
 
 /// The type used for selectable items.
@@ -441,7 +442,7 @@ func addScrollerCodes(into codes: inout [ANSIControlCode], scroller: Appearance.
 }
 
 enum Event<T: Selectable> {
-    case key(TerminalKey?)
+    case key(KeyCommand?)
     case choice([T])
     case continueSignal
     case resizeSignal
@@ -517,7 +518,6 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
     ///
     /// The `run` method consumes the `choices` sequence given in init and asynchronously returns the selected items.
     public func run() async throws -> [T] {
-        let keyReader = KeyReader(tty: tty)
         self.view.outputCodes([
             .setCursorHidden(true),
             .saveCursorPosition,
@@ -528,12 +528,9 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
 
         try self.tty.setRaw()
 
-        let keyEvents = keyReader.keys
-            .map { keyResult throws -> Event<T> in
-                switch keyResult {
-                case let .success(key): return Event.key(key)
-                case let .failure(error): throw error
-                }
+        let keyEvents = KeyReader.keyStream(fileHandle: self.tty.fileHandle)
+            .map { keyInput throws -> Event<T> in
+                Event.key(KeyCommand(keyInput: keyInput))
             }
         let viewStateUpdateEvents = self.viewState.changed
             .map { Event<T>.viewStateChanged }
@@ -573,10 +570,14 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
                 self.viewState.editFilter(.backspace)
                 self.view.showFilter()
                 self.view.showStatus()
+            case .key(.backtab):
+                break
             case let .key(.character(character)):
                 self.viewState.editFilter(.insert(character))
                 self.view.showFilter()
                 self.view.showStatus()
+            case .key(.controlSequence):
+                break
             case .key(.delete):
                 self.viewState.editFilter(.delete)
                 self.view.showFilter()
@@ -595,6 +596,8 @@ public final class FuzzySelector<T: Selectable, E: Error, Seq> where Seq: AsyncS
                 }
                 self.view.showFilter()
                 self.view.showStatus()
+            case .key(.esc):
+                break
             case .key(.moveToEnd):
                 self.viewState.editFilter(.moveToEnd)
                 self.view.showFilter()

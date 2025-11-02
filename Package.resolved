@@ -1,5 +1,5 @@
 {
-  "originHash" : "3226093a415cfe7f6af7a7700cc8aab3af1f3bda12a51abceebb412eb2be6fae",
+  "originHash" : "029da1d4d9b34616c40c2d430621f4549eea015cc3e77af575e8af7a40beb179",
   "pins" : [
     {
       "identity" : "swift-argument-parser",
@@ -53,6 +53,14 @@
       "state" : {
         "revision" : "4a56c05d18cd7cb0ad85fcc0bd1b616f45c8a067",
         "version" : "0.3.0"
+      }
+    },
+    {
+      "identity" : "terminal-input",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/juri/terminal-input",
+      "state" : {
+        "revision" : "e62d050ad825c2ccff212fb30b5cfbc29da9d1c8"
       }
     }
   ],

@@ -18,6 +18,7 @@ let package = Package(
             from: "2.6.3"
         ),
         .package(url: "https://github.com/juri/terminal-ansi", from: "0.3.0"),
+        .package(url: "https://github.com/juri/terminal-input", revision: "e62d050ad825c2ccff212fb30b5cfbc29da9d1c8"),
     ],
     targets: [
         .target(
@@ -26,6 +27,7 @@ let package = Package(
                 .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
                 .product(name: "UnixSignals", package: "swift-service-lifecycle"),
                 .product(name: "TerminalANSI", package: "terminal-ansi"),
+                .product(name: "TerminalInput", package: "terminal-input"),
             ]
         ),
         .testTarget(
